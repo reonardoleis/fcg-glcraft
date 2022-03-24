@@ -2,7 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="Laboratorio_2" />
+		<Option title="fcg-glcraft" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
@@ -367,6 +367,14 @@
 		<Unit filename="include/glm/vector_relational.hpp" />
 		<Unit filename="include/matrices.h" />
 		<Unit filename="include/utils.h" />
+		<Unit filename="src/engine/game_object.cpp" />
+		<Unit filename="src/engine/game_object.h" />
+		<Unit filename="src/engine/key_callback.cpp" />
+		<Unit filename="src/engine/key_callback.h" />
+		<Unit filename="src/engine/window.cpp" />
+		<Unit filename="src/engine/window.h" />
+		<Unit filename="src/entities/player.cpp" />
+		<Unit filename="src/entities/player.h" />
 		<Unit filename="src/glad.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -375,9 +383,6 @@
 		<Unit filename="src/shader_vertex.glsl" />
 		<Unit filename="src/textrendering.cpp" />
 		<Extensions>
-			<code_completion />
-			<envvars />
-			<debugger />
 			<lib_finder disable_auto="1" />
 		</Extensions>
 	</Project>

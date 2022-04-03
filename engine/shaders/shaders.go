@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	ShaderProgram uint32
+	ShaderProgram   uint32
+	CubeTextureTest uint32
 )
 
 func LoadFragmentShader(name string) (string, error) {

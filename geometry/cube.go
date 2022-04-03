@@ -3,6 +3,7 @@ package geometry
 import (
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/reonardoleis/fcg-glcraft/engine/renderer"
+	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 )
 
 func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
@@ -104,36 +105,18 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	// Tal cor é definida como coeficientes RGBA: Red, Green, Blue, Alpha;
 	// isto é: Vermelho, Verde, Azul, Alpha (valor de transparência).
 	// Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
-	color_coefficients := []float32{
-		// Cores dos vértices do cubo
-		//  R     G     B     A
-		0.0, 0.7, 0.0, 0.0, // cor do vértice 0
-		0.0, 0.8, 0.0, 0.0, // cor do vértice 1
-		0.0, 0.9, 0.0, 0.0, // cor do vértice 2
-		0.0, 1.0, 0.0, 0.0, // cor do vértice 3
-		0.0, 1.0, 0.0, 0.0, // cor do vértice 4
-		0.0, 0.9, 0.0, 0.0, // cor do vértice 5
-		0.0, 0.8, 0.0, 0.0, // cor do vértice 6
-		0.0, 0.7, 0.0, 0.0, // cor do vértice 7
-		// Cores para desenhar o eixo X
-		1.0, 0.0, 0.0, 1.0, // cor do vértice 8
-		1.0, 0.0, 0.0, 1.0, // cor do vértice 9
-		// Cores para desenhar o eixo Y
-		0.0, 1.0, 0.0, 1.0, // cor do vértice 10
-		0.0, 1.0, 0.0, 1.0, // cor do vértice 11
-		// Cores para desenhar o eixo Z
-		0.0, 0.0, 1.0, 1.0, // cor do vértice 12
-		0.0, 0.0, 1.0, 1.0, // cor do vértice 13
-	}
-	var VBO_color_coefficients_id uint32
-	gl.GenBuffers(1, &VBO_color_coefficients_id)
-	gl.BindBuffer(gl.ARRAY_BUFFER, VBO_color_coefficients_id)
-	gl.BufferData(gl.ARRAY_BUFFER, len(color_coefficients)*4, nil, gl.STATIC_DRAW)
-	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(color_coefficients)*4, gl.Ptr(color_coefficients))
-	location = 1             // "(location = 1)" em "shader_vertex.glsl"
-	number_of_dimensions = 4 // vec4 em "shader_vertex.glsl"
-	gl.VertexAttribPointer(location, number_of_dimensions, gl.FLOAT, false, 0, gl.PtrOffset(0))
-	gl.EnableVertexAttribArray(location)
+	var vbo uint32
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(model_coefficients)*4, gl.Ptr(model_coefficients), gl.STATIC_DRAW)
+
+	vertAttrib := uint32(gl.GetAttribLocation(shaders.ShaderProgram, gl.Str("vert\x00")))
+	gl.EnableVertexAttribArray(vertAttrib)
+	gl.VertexAttribPointerWithOffset(vertAttrib, 3, gl.FLOAT, false, 5*4, 0)
+
+	texCoordAttrib := uint32(gl.GetAttribLocation(shaders.ShaderProgram, gl.Str("vertTexCoord\x00")))
+	gl.EnableVertexAttribArray(texCoordAttrib)
+	gl.VertexAttribPointerWithOffset(texCoordAttrib, 2, gl.FLOAT, false, 5*4, 3*4)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
 	// Vamos então definir polígonos utilizando os vértices do array
@@ -159,26 +142,7 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 		4, 3, 7, // triângulo 10
 		4, 1, 0, // triângulo 11
 		1, 6, 2, // triângulo 12
-		// Definimos os índices dos vértices que definem as ARESTAS de um cubo
-		// através de 12 linhas que serão desenhadas com o modo de renderização
-		// gl.LINES.
-		0, 1, // linha 1
-		1, 2, // linha 2
-		2, 3, // linha 3
-		3, 0, // linha 4
-		0, 4, // linha 5
-		4, 7, // linha 6
-		7, 6, // linha 7
-		6, 2, // linha 8
-		6, 5, // linha 9
-		5, 4, // linha 10
-		5, 1, // linha 11
-		7, 3, // linha 12
-		// Definimos os índices dos vértices que definem as linhas dos eixos X, Y,
-		// Z, que serão desenhados com o modo gl.LINES.
-		8, 9, // linha 1
-		10, 11, // linha 2
-		12, 13, // linha 3
+
 	}
 
 	// Criamos um primeiro objeto virtual (SceneObject) que se refere às faces

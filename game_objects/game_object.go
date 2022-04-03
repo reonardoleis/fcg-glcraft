@@ -22,6 +22,9 @@ func (g GameObject) Draw() {
 
 	if !CubeEdgesOnly {
 		gl.BindVertexArray(g.SceneObject.VaoID)
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, shaders.CubeTextureTest)
+
 		gl.UniformMatrix4fv(model_uniform, 1, false, &g.Model[0])
 		gl.Uniform1i(render_as_black_uniform, 0)
 		gl.DrawElements(

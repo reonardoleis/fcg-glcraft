@@ -8,12 +8,12 @@ import (
 )
 
 var (
-	CubeEdgesOnly bool = false
+	BlockEdgesOnly bool = false
 )
 
-type Cube = GameObject
+type Block = GameObject
 
-func NewCube(x, y, z, size float32, withEdges bool) Cube {
+func NewBlock(x, y, z, size float32, withEdges bool) Block {
 	vaoID, sceneObject := geometry.BuildCube(0, 0, 0, size)
 	sceneObject.VaoID = vaoID
 	edges := renderer.SceneObject{}
@@ -24,7 +24,7 @@ func NewCube(x, y, z, size float32, withEdges bool) Cube {
 		vaoID, edges = geometry.BuildCubeEdges(0, 0, 0, size)
 		edges.VaoID = vaoID
 	}
-	return Cube{
+	return Block{
 		Position:    mgl32.Vec4{x, y, z, 0.0},
 		Size:        size,
 		Model:       model,
@@ -34,6 +34,6 @@ func NewCube(x, y, z, size float32, withEdges bool) Cube {
 	}
 }
 
-func (c *Cube) Translate(x, y, z float32) {
+func (c *Block) Translate(x, y, z float32) {
 	c.Model = math2.Matrix_Identity().Mul4(math2.Matrix_Translate(x, y, z))
 }

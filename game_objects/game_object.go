@@ -20,7 +20,7 @@ func (g GameObject) Draw() {
 	model_uniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("model\000"))                     // Variável da matriz "model"
 	render_as_black_uniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("render_as_black\000")) // Variável booleana em shader_vertex.glsl
 
-	if !CubeEdgesOnly {
+	if !BlockEdgesOnly {
 		gl.BindVertexArray(g.SceneObject.VaoID)
 		gl.UniformMatrix4fv(model_uniform, 1, false, &g.Model[0])
 		gl.Uniform1i(render_as_black_uniform, 0)

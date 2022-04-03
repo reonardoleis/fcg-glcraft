@@ -22,7 +22,6 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	rendererPkg "github.com/reonardoleis/fcg-glcraft/engine/renderer"
-	"github.com/reonardoleis/fcg-glcraft/engine/scene"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
@@ -52,7 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mainScene := scene.NewScene()
+	// mainScene := scene.NewScene()
 
 	program, err := shaders.InitShaderProgram("standard")
 	if err != nil {
@@ -63,20 +62,10 @@ func main() {
 
 	cubeInformation := make(map[int]map[int]map[int]*game_objects.GameObject)
 
-	for x := -world.WorldSizeX; x < world.WorldSizeX; x++ {
-		cubeInformation[x] = make(map[int]map[int]*game_objects.GameObject)
-		for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
-			cubeInformation[x][y] = make(map[int]*game_objects.GameObject)
-			for z := -world.WorldSizeZ; z < world.WorldSizeZ; z++ {
-				if z == 2 {
-					continue
-				}
-				newCube := game_objects.NewCube(float32(x), float32(y), float32(z), 1, true)
-				mainScene.Add(newCube)
-				cubeInformation[x][y][z] = &newCube
-			}
-		}
-	}
+	world := world.NewWorld("", mgl32.Vec3{200, 1, 200}, 123456)
+	world.GenerateWorld()
+
+	cubeInformation = world.Blocks
 
 	// model_uniform := gl.GetUniformLocation(program, gl.Str("model\000"))                     // Variável da matriz "model"
 	// view_uniform := gl.GetUniformLocation(program, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
@@ -104,12 +93,12 @@ func main() {
 		gl.UseProgram(program)
 
 		camera.Update()
-		player.Update()
+		player.Update(world)
 
 		if controlHandler.IsToggled(int(glfw.KeyZ)) {
-			game_objects.CubeEdgesOnly = true
+			game_objects.BlockEdgesOnly = true
 		} else {
-			game_objects.CubeEdgesOnly = false
+			game_objects.BlockEdgesOnly = false
 		}
 
 		// gl.UniformMatrix4fv(view_uniform, 1, false, &view[0])
@@ -120,18 +109,18 @@ func main() {
 		roundedPlayerX, _, roundedPlayerZ := player.GetRoundedPosition()
 		playerY := float64(player.Position.Y())
 
-		for x := math.Max(-float64(world.WorldSizeX), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.WorldSizeX), float64(roundedPlayerX)+maxDist); x++ {
-			for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
-				for z := math.Max(-float64(world.WorldSizeZ), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.WorldSizeZ), float64(roundedPlayerZ)+maxDist); z++ {
-					if cubeInformation[int(x)][y][int(z)] == nil {
+		for x := math.Max(-float64(world.Size.X()), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.Size.X()), float64(roundedPlayerX)+maxDist); x++ {
+			for y := -world.Size.Y(); y < world.Size.Y(); y++ {
+				for z := math.Max(-float64(world.Size.Z()), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.Size.Z()), float64(roundedPlayerZ)+maxDist); z++ {
+					if cubeInformation[int(x)][int(y)][int(z)] == nil {
 						continue
 					}
-					cubeInformation[int(x)][y][int(z)].Draw()
+					cubeInformation[int(x)][int(y)][int(z)].Draw()
 				}
 			}
 		}
 
-		window.SetTitle(fmt.Sprintf("X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", roundedPlayerX, playerY, roundedPlayerZ, world.WorldSizeX, world.WorldSizeZ))
+		window.SetTitle(fmt.Sprintf("X: %v - Y: %v - Z: %v", roundedPlayerX, playerY, roundedPlayerZ))
 
 		//	fmt.Println(roundedPlayerX, worldSizeX)
 		//	fmt.Println(roundedPlayerZ, worldSizeZ)
@@ -147,8 +136,7 @@ func main() {
 			}
 		}
 
-		blockBelow := cubeInformation[roundedPlayerX][highest][roundedPlayerZ]
-
+		blockBelow := world.FindHighestBlock(roundedPlayerX, roundedPlayerZ)
 		player.Fall(blockBelow)
 
 		controlHandler.FinishMousePositionChanged()

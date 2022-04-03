@@ -96,7 +96,7 @@ func (p *Player) HandleJump() {
 	}
 }
 
-func (p *Player) Update() {
+func (p *Player) Update(world *world.World) {
 	p.HandleLookDirection()
 	w, u := p.GetMovementVector()
 
@@ -132,33 +132,33 @@ func (p *Player) Update() {
 		p.Jump()
 	}
 
-	p.HandleWorldLimits()
+	p.HandleWorldLimits(world)
 
 	p.Camera.Follow(p.Position)
 }
 
-func (p *Player) HandleWorldLimits() {
-	worldSizeX, _, worldSizeZ := world.WorldSizeX, world.WorldSizeY, world.WorldSizeZ
+func (p *Player) HandleWorldLimits(world *world.World) {
+	worldSizeX, _, worldSizeZ := world.Size.X(), world.Size.Y(), world.Size.Z()
 	roundedPlayerX := int(math.Round(float64(p.Position.X())))
 
 	roundedPlayerZ := int(math.Round(float64(p.Position.Z())))
-	if roundedPlayerX < -worldSizeX {
-		roundedPlayerX = -worldSizeX
+	if roundedPlayerX < -int(worldSizeX) {
+		roundedPlayerX = -int(worldSizeX)
 		p.SetPosition(mgl32.Vec4{-float32(worldSizeX), p.Position.Y(), p.Position.Z(), 1.0})
 	}
 
-	if roundedPlayerX > worldSizeX-1 {
-		roundedPlayerX = worldSizeX - 1
+	if roundedPlayerX > int(worldSizeX)-1 {
+		roundedPlayerX = int(worldSizeX - 1)
 		p.SetPosition(mgl32.Vec4{float32(worldSizeX) - 1, p.Position.Y(), p.Position.Z(), 1.0})
 	}
 
-	if roundedPlayerZ < -worldSizeZ {
-		roundedPlayerZ = -worldSizeZ
+	if roundedPlayerZ < int(-worldSizeZ) {
+		roundedPlayerZ = int(-worldSizeZ)
 		p.SetPosition(mgl32.Vec4{p.Position.X(), p.Position.Y(), -float32(worldSizeZ), 1.0})
 	}
 
-	if roundedPlayerZ > worldSizeZ-1 {
-		roundedPlayerZ = worldSizeZ - 1
+	if roundedPlayerZ > int(worldSizeZ-1) {
+		roundedPlayerZ = int(worldSizeZ - 1)
 		p.SetPosition(mgl32.Vec4{p.Position.X(), p.Position.Y(), float32(worldSizeZ) - 1, 1.0})
 	}
 }

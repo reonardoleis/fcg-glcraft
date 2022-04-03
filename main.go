@@ -22,10 +22,10 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	rendererPkg "github.com/reonardoleis/fcg-glcraft/engine/renderer"
-	"github.com/reonardoleis/fcg-glcraft/engine/scene"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
+	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
 	"github.com/reonardoleis/fcg-glcraft/world"
@@ -52,31 +52,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mainScene := scene.NewScene()
+	//mainScene := scene.NewScene()
 
 	program, err := shaders.InitShaderProgram("standard")
 	if err != nil {
 		panic(err)
 	}
 
+	crosshairProgram, err := shaders.InitShaderProgram2("crosshair")
+
 	gl.UseProgram(program)
 
 	cubeInformation := make(map[int]map[int]map[int]*game_objects.GameObject)
 
-	for x := -world.WorldSizeX; x < world.WorldSizeX; x++ {
-		cubeInformation[x] = make(map[int]map[int]*game_objects.GameObject)
-		for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
-			cubeInformation[x][y] = make(map[int]*game_objects.GameObject)
-			for z := -world.WorldSizeZ; z < world.WorldSizeZ; z++ {
-				if z == 2 {
-					continue
-				}
-				newCube := game_objects.NewCube(float32(x), float32(y), float32(z), 1, true)
-				mainScene.Add(newCube)
-				cubeInformation[x][y][z] = &newCube
-			}
-		}
-	}
+	world := world.NewWorld("", mgl32.Vec3{10, 1, 50}, 2300932812397)
+	world.GenerateWorld()
+	cubeInformation = world.Blocks
 
 	// model_uniform := gl.GetUniformLocation(program, gl.Str("model\000"))                     // Variável da matriz "model"
 	// view_uniform := gl.GetUniformLocation(program, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
@@ -84,6 +75,10 @@ func main() {
 	// render_as_black_uniform := gl.GetUniformLocation(program, gl.Str("render_as_black\000")) // Variável booleana em shader_vertex.glsl
 
 	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
+	gl.Enable(gl.CULL_FACE)
+	gl.CullFace(gl.BACK)
+	gl.FrontFace(gl.CCW)
 
 	controlHandler := controls.NewControls(window)
 	controlHandler.StartKeyHandlers()
@@ -97,57 +92,53 @@ func main() {
 	start := float64(0.0)
 	end := float64(0.0)
 	for !window.ShouldClose() {
+
 		start = glfw.GetTime()
 		gl.ClearColor(0, 1, 1, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		gl.UseProgram(program)
+		gl.UseProgram(crosshairProgram)
 
+		geometry.DrawCrosshair()
+
+		gl.UseProgram(program)
 		camera.Update()
-		player.Update()
+		player.Update(world)
 
 		if controlHandler.IsToggled(int(glfw.KeyZ)) {
-			game_objects.CubeEdgesOnly = true
+			game_objects.BlockEdgesOnly = true
 		} else {
-			game_objects.CubeEdgesOnly = false
+			game_objects.BlockEdgesOnly = false
 		}
 
 		// gl.UniformMatrix4fv(view_uniform, 1, false, &view[0])
 		// gl.UniformMatrix4fv(projection_uniform, 1, false, &projection[0])
 
-		maxDist := float64(50)
+		maxDist := float64(30)
 
-		roundedPlayerX, _, roundedPlayerZ := player.GetRoundedPosition()
+		roundedPlayerX, roundedPlayerY, roundedPlayerZ := player.GetRoundedPosition()
 		playerY := float64(player.Position.Y())
 
-		for x := math.Max(-float64(world.WorldSizeX), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.WorldSizeX), float64(roundedPlayerX)+maxDist); x++ {
-			for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
-				for z := math.Max(-float64(world.WorldSizeZ), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.WorldSizeZ), float64(roundedPlayerZ)+maxDist); z++ {
-					if cubeInformation[int(x)][y][int(z)] == nil {
+		for x := math.Max(-float64(world.Size.X()), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.Size.X()), float64(roundedPlayerX)+maxDist); x++ {
+			for y := math.Max(-float64(world.Size.Y()), float64(roundedPlayerY)-maxDist); y < math.Min(float64(world.Size.Y()), float64(roundedPlayerY)+maxDist); y++ {
+				for z := math.Max(-float64(world.Size.Z()), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.Size.Z()), float64(roundedPlayerZ)+maxDist); z++ {
+					if cubeInformation[int(x)][int(y)][int(z)] == nil {
 						continue
 					}
-					cubeInformation[int(x)][y][int(z)].Draw()
+
+					cubeInformation[int(x)][int(y)][int(z)].Draw()
+					cubeInformation[int(x)][int(y)][int(z)].WithEdges = false
+					if cubeInformation[int(x)][int(y)][int(z)].Ephemeral {
+						cubeInformation[int(x)][int(y)][int(z)] = nil
+					}
+
 				}
 			}
 		}
 
-		window.SetTitle(fmt.Sprintf("X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", roundedPlayerX, playerY, roundedPlayerZ, world.WorldSizeX, world.WorldSizeZ))
+		window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime, roundedPlayerX, playerY, roundedPlayerZ, world.Size.X(), world.Size.Z()))
 
-		//	fmt.Println(roundedPlayerX, worldSizeX)
-		//	fmt.Println(roundedPlayerZ, worldSizeZ)
-
-		firstTime := true
-		highest := 0
-		for k := range cubeInformation[roundedPlayerX] {
-			if firstTime {
-				highest = k
-				firstTime = false
-			} else if k > highest {
-				highest = k
-			}
-		}
-
-		blockBelow := cubeInformation[roundedPlayerX][highest][roundedPlayerZ]
+		blockBelow := world.FindHighestBlock(roundedPlayerX, roundedPlayerZ)
 
 		player.Fall(blockBelow)
 

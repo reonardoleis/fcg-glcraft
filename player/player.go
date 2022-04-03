@@ -13,40 +13,48 @@ import (
 )
 
 type Player struct {
-	Position          mgl32.Vec4
-	Camera            *camera.Camera
-	IsGrounded        bool
-	WalkingSpeed      float32
-	JumpHeight        float32
-	JumpSpeed         float32
-	_isJumping        bool
-	_originalY        float32
-	defaultSpeed      float32
-	RunningMultiplier float32
-	ControlHandler    controls.Controls
-	PlayerPhi         float64
-	PlayerTheta       float64
-	MovementVector    mgl32.Vec4
-	Height            float32
+	Position                  mgl32.Vec4
+	Camera                    *camera.Camera
+	IsGrounded                bool
+	WalkingSpeed              float32
+	JumpHeight                float32
+	JumpSpeed                 float32
+	_isJumping                bool
+	_originalY                float32
+	defaultSpeed              float32
+	RunningMultiplier         float32
+	ControlHandler            controls.Controls
+	PlayerPhi                 float64
+	PlayerTheta               float64
+	MovementVector            mgl32.Vec4
+	Height                    float32
+	HitAt                     *mgl32.Vec4
+	ClosestEmptySpace         *mgl32.Vec4
+	_mouseLeftDownLastUpdate  bool
+	_mouseRightDownLastUpdate bool
 }
 
 func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walkingSpeed, runningMultiplier, jumpHeight, jumpSpeed, height float32) Player {
 	return Player{
-		Position:          playerPosition,
-		ControlHandler:    controlHandler,
-		Camera:            nil,
-		IsGrounded:        false,
-		WalkingSpeed:      walkingSpeed,
-		RunningMultiplier: runningMultiplier,
-		defaultSpeed:      walkingSpeed,
-		PlayerPhi:         0.0,
-		PlayerTheta:       0.0,
-		MovementVector:    mgl32.Vec4{},
-		JumpHeight:        jumpHeight,
-		JumpSpeed:         jumpSpeed,
-		_isJumping:        false,
-		_originalY:        playerPosition.Y(),
-		Height:            height,
+		Position:                  playerPosition,
+		ControlHandler:            controlHandler,
+		Camera:                    nil,
+		IsGrounded:                false,
+		WalkingSpeed:              walkingSpeed,
+		RunningMultiplier:         runningMultiplier,
+		defaultSpeed:              walkingSpeed,
+		PlayerPhi:                 0.0,
+		PlayerTheta:               0.0,
+		MovementVector:            mgl32.Vec4{},
+		JumpHeight:                jumpHeight,
+		JumpSpeed:                 jumpSpeed,
+		_isJumping:                false,
+		_originalY:                playerPosition.Y(),
+		Height:                    height,
+		HitAt:                     &mgl32.Vec4{},
+		ClosestEmptySpace:         &mgl32.Vec4{},
+		_mouseLeftDownLastUpdate:  true,
+		_mouseRightDownLastUpdate: true,
 	}
 }
 
@@ -96,7 +104,7 @@ func (p *Player) HandleJump() {
 	}
 }
 
-func (p *Player) Update() {
+func (p *Player) Update(world *world.World) {
 	p.HandleLookDirection()
 	w, u := p.GetMovementVector()
 
@@ -116,6 +124,22 @@ func (p *Player) Update() {
 	if p.ControlHandler.IsDown(int(glfw.KeyA)) {
 		newPosition = p.Position.Add(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
 	}
+	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) && !p._mouseLeftDownLastUpdate && p.HitAt != nil {
+		p._mouseLeftDownLastUpdate = true
+		world.Blocks[int(p.HitAt.X())][int(p.HitAt.Y())][int(p.HitAt.Z())] = nil
+		p.HitAt = nil
+	}
+	if !p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) {
+		p._mouseLeftDownLastUpdate = false
+	}
+	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
+		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false)
+		p.ClosestEmptySpace = nil
+		p._mouseRightDownLastUpdate = true
+	}
+	if !p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) {
+		p._mouseRightDownLastUpdate = false
+	}
 
 	if p.ControlHandler.IsToggled(int(glfw.KeyLeftShift)) {
 		p.WalkingSpeed = p.defaultSpeed * p.RunningMultiplier
@@ -132,13 +156,41 @@ func (p *Player) Update() {
 		p.Jump()
 	}
 
-	p.HandleWorldLimits()
+	p.HandleWorldLimits(world)
 
 	p.Camera.Follow(p.Position)
+
+	lookingAtPoint := p.Position.Add(p.Camera.ViewVector)
+	lookingDirection := lookingAtPoint.Sub(p.Position)
+	var hitAt *mgl32.Vec4
+	hitAt = nil
+	bestDist := 0.0
+	for i := 0.0; i < 5.0; i += 0.1 {
+		ray := lookingDirection.Mul(float32(i))
+		if world.Blocks[int(p.Position.X()+ray.X())][int(p.Position.Y()+ray.Y())][int(p.Position.Z()+ray.Z())] != nil {
+			blockPosition := ray.Add(p.Position)
+			if hitAt == nil {
+				hitAt = &blockPosition
+				bestDist = math2.Distance(*hitAt, ray)
+			} else if math2.Distance(blockPosition, ray) < bestDist {
+				bestDist = math2.Distance(blockPosition, ray)
+				hitAt = &blockPosition
+			}
+		}
+	}
+
+	if hitAt != nil {
+		world.Blocks[int(hitAt.X())][int(hitAt.Y())][int(hitAt.Z())].WithEdges = true
+		p.HitAt = hitAt
+		rx, ry, rz := int(hitAt.X()), int(hitAt.Y()), int(hitAt.Z())
+		k := &mgl32.Vec4{float32(rx), float32(ry), float32(rz), 0.0}
+		p.ClosestEmptySpace = world.FindPlacementPosition(*k, p.Position)
+	}
+
 }
 
-func (p *Player) HandleWorldLimits() {
-	worldSizeX, _, worldSizeZ := world.WorldSizeX, world.WorldSizeY, world.WorldSizeZ
+func (p *Player) HandleWorldLimits(world *world.World) {
+	worldSizeX, worldSizeZ := int(world.Size.X()), int(world.Size.Z())
 	roundedPlayerX := int(math.Round(float64(p.Position.X())))
 
 	roundedPlayerZ := int(math.Round(float64(p.Position.Z())))
@@ -167,6 +219,14 @@ func (p Player) GetRoundedPosition() (int, int, int) {
 	roundedX := int(math.Round(float64(p.Position.X())))
 	roundedY := int(math.Round(float64(p.Position.Y())))
 	roundedZ := int(math.Round(float64(p.Position.Z())))
+
+	return roundedX, roundedY, roundedZ
+}
+
+func (p Player) GetFlooredPosition() (int, int, int) {
+	roundedX := int(math.Floor(float64(p.Position.X())))
+	roundedY := int(math.Floor(float64(p.Position.Y())))
+	roundedZ := int(math.Floor(float64(p.Position.Z())))
 
 	return roundedX, roundedY, roundedZ
 }

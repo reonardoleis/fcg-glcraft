@@ -72,7 +72,7 @@ func (c *Camera) HandleFirstPersonCamera() {
 	vy := r * float32(math.Sin(float64(c.CameraPhi)))
 	vz := r * float32(math.Cos(float64(c.CameraPhi))*math.Cos(float64(c.CameraTheta)))
 
-	c.ViewVector = mgl32.Vec4{vx, vy, vz, 0.0}
+	c.ViewVector = mgl32.Vec4{vx, vy, vz, 0.0}.Normalize()
 	c.UpVector = mgl32.Vec4{0.0, 1.0, 0.0, 0.0}
 }
 
@@ -87,8 +87,8 @@ func (c *Camera) Update() {
 }
 
 func (c *Camera) Handle() {
-	viewUniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
-	projectionUniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl
+	viewUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
+	projectionUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl
 
 	c.view = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
 

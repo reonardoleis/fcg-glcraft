@@ -1,6 +1,7 @@
 package game_objects
 
 import (
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/engine/renderer"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
@@ -24,9 +25,7 @@ func NewCube(x, y, z, size float32, withEdges bool) Cube {
 		edges.VaoID = vaoID
 	}
 	return Cube{
-		X:           x,
-		Y:           y,
-		Z:           z,
+		Position:    mgl32.Vec4{x, y, z, 0.0},
 		Size:        size,
 		Model:       model,
 		SceneObject: sceneObject,

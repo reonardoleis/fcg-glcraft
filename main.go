@@ -26,11 +26,11 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
-	math2 "github.com/reonardoleis/fcg-glcraft/math"
+	"github.com/reonardoleis/fcg-glcraft/player"
 )
 
-const windowWidth = 800
-const windowHeight = 600
+const windowWidth = 1280
+const windowHeight = 720
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -39,21 +39,15 @@ func init() {
 
 func main() {
 
-	g_CameraPhi := 0.0
-	g_CameraTheta := 0.0
-	g_cameraDistance := 2.5
-
-	// g_screenRatio := float32(1.0)
-
 	playerPosition := mgl32.Vec4{-1.0, 10.0, -6.0, 1.0}
-	playerSpeed := float32(0.1)
+
 	playerHeight := 3
 
 	worldSizeX := 50
 	worldSizeY := 1
 	worldSizeZ := 50
 
-	window, err := window.NewWindow("fcg-glcraft", 800, 600)
+	window, err := window.NewWindow("fcg-glcraft", windowWidth, windowHeight)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -97,21 +91,9 @@ func main() {
 	controlHandler := controls.NewControls(window)
 	controlHandler.StartKeyHandlers()
 
-	camera := camera.Camera{
-		Position:       playerPosition,
-		ViewVector:     mgl32.Vec4{0.0, 0.0, 0.0, 0.0},
-		UpVector:       mgl32.Vec4{0.0, 0.0, 0.0, 0.0},
-		ControlHandler: controlHandler,
-		CameraDistance: g_cameraDistance,
-		Fov:            math.Pi / 3,
-		Near:           -0.1,
-		Far:            -10.0,
-		CameraTheta:    g_CameraTheta,
-		CameraPhi:      g_CameraPhi,
-		View:           mgl32.Mat4{},
-		Projection:     mgl32.Mat4{},
-	}
-	camera.Init()
+	camera := camera.NewCamera(playerPosition, controlHandler, math.Pi/3, camera.FirstPersonCamera)
+	player := player.NewPlayer(playerPosition, controlHandler, 0.1, 3)
+	player.SetCamera(camera)
 
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
@@ -123,48 +105,32 @@ func main() {
 		gl.UseProgram(program)
 
 		camera.Update()
+		player.Update()
 
-		w, u := camera.GetWU()
-		if controlHandler.IsDown(int(glfw.KeyW)) {
-			camera.SetPosition(camera.Position.Add(w.Mul(-1).Mul(playerSpeed)))
-		}
-		if controlHandler.IsDown(int(glfw.KeyS)) {
-			camera.SetPosition(camera.Position.Add(w.Mul(playerSpeed)))
-		}
-		if controlHandler.IsDown(int(glfw.KeyD)) {
-			camera.SetPosition(camera.Position.Add(u.Mul(playerSpeed)))
-		}
-		if controlHandler.IsDown(int(glfw.KeyA)) {
-			camera.SetPosition(camera.Position.Add(u.Mul(-1).Mul(playerSpeed)))
-		}
 		if controlHandler.IsToggled(int(glfw.KeyZ)) {
 			game_objects.CubeEdgesOnly = true
 		} else {
 			game_objects.CubeEdgesOnly = false
 		}
-		if controlHandler.IsDown(int(glfw.KeyLeftShift)) {
-			playerSpeed = 0.3
-		} else {
-			playerSpeed = 0.1
-		}
-
-		camera.Handle()
 
 		// gl.UniformMatrix4fv(view_uniform, 1, false, &view[0])
 		// gl.UniformMatrix4fv(projection_uniform, 1, false, &projection[0])
 
-		for _, obj := range mainScene.GetGameObjects() {
-			if math2.Distance(obj.GetPosition(), camera.Position) > 25 {
-				continue
-			}
-			obj.Draw()
-		}
+		maxDist := float64(20)
 
 		roundedPlayerX := int(math.Round(float64(camera.Position.X())))
 		playerY := float64(camera.Position.Y())
 		roundedPlayerZ := int(math.Round(float64(camera.Position.Z())))
 
-		fmt.Println("X: ", roundedPlayerX, "Y: ", playerY, "Z: ", roundedPlayerZ)
+		for x := math.Max(-float64(worldSizeX), float64(roundedPlayerX)-maxDist); x < math.Min(float64(worldSizeX), float64(roundedPlayerX)+maxDist); x++ {
+			for y := 0; y < worldSizeY; y++ {
+				for z := math.Max(-float64(worldSizeZ), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(worldSizeZ), float64(roundedPlayerZ)+maxDist); z++ {
+					cubeInformation[int(x)][y][int(z)].Draw()
+				}
+			}
+		}
+
+		// fmt.Println("X: ", roundedPlayerX, "Y: ", playerY, "Z: ", roundedPlayerZ)
 
 		if roundedPlayerX < -worldSizeX {
 
@@ -197,10 +163,10 @@ func main() {
 		//	fmt.Println(roundedPlayerZ, worldSizeZ)
 		blockBelow := cubeInformation[roundedPlayerX][0][roundedPlayerZ]
 
-		if playerY-float64(playerHeight) <= float64(blockBelow.Y+(blockBelow.Size/2)) {
-			camera.SetPosition(mgl32.Vec4{camera.Position.X(), blockBelow.Y + (blockBelow.Size / 2) + float32(playerHeight), camera.Position.Z(), 1.0})
+		if playerY-float64(playerHeight) <= float64(blockBelow.Position.Y()+(blockBelow.Size/2)) {
+			player.Position = (mgl32.Vec4{camera.Position.X(), blockBelow.Position.Y() + (blockBelow.Size / 2) + float32(playerHeight), camera.Position.Z(), 1.0})
 		} else {
-			camera.SetPosition(mgl32.Vec4{camera.Position.X(), camera.Position.Y() - 0.1, camera.Position.Z(), 1.0})
+			player.Position = (mgl32.Vec4{camera.Position.X(), camera.Position.Y() - 0.1, camera.Position.Z(), 1.0})
 		}
 
 		window.SwapBuffers()

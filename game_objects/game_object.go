@@ -8,9 +8,7 @@ import (
 )
 
 type GameObject struct {
-	X           float32
-	Y           float32
-	Z           float32
+	Position    mgl32.Vec4
 	Size        float32
 	Model       mgl32.Mat4
 	SceneObject renderer.SceneObject
@@ -48,5 +46,5 @@ func (g GameObject) Draw() {
 }
 
 func (g GameObject) GetPosition() mgl32.Vec4 {
-	return mgl32.Vec4{g.X, g.Y, g.Z, 0.0}
+	return g.Position
 }

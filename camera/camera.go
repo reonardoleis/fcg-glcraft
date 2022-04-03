@@ -11,6 +11,12 @@ import (
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 )
 
+type CameraType int32
+
+const (
+	FirstPersonCamera CameraType = iota
+)
+
 type Camera struct {
 	Position       mgl32.Vec4
 	ViewVector     mgl32.Vec4
@@ -22,16 +28,28 @@ type Camera struct {
 	Far            float32
 	CameraTheta    float64
 	CameraPhi      float64
-	View           mgl32.Mat4
-	Projection     mgl32.Mat4
+	Type           CameraType
+	view           mgl32.Mat4
+	projection     mgl32.Mat4
 }
 
-func (c *Camera) Init() {
-	c.ViewVector = mgl32.Vec4{0.0, 0.0, 0.0, 0.0}
-	c.UpVector = mgl32.Vec4{0.0, 1.0, 0.0, 0.0}
+func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov float32, cameraType CameraType) *Camera {
+	return &Camera{
+		Position:       cameraPosition,
+		ViewVector:     mgl32.Vec4{0.0, 0.0, 0.0, 0.0},
+		UpVector:       mgl32.Vec4{0.0, 1.0, 0.0, 0.0},
+		ControlHandler: controlHandler,
+		CameraDistance: 2.5,
+		Fov:            fov,
+		Near:           -0.1,
+		Far:            -10.0,
+		CameraTheta:    0.0,
+		CameraPhi:      0.0,
+		Type:           cameraType,
+	}
 }
 
-func (c *Camera) Update() {
+func (c *Camera) HandleFirstPersonCamera() {
 	if c.ControlHandler.MousePositionChanged() {
 		dx, dy := c.ControlHandler.GetMouseDeltas()
 		c.CameraTheta -= 0.01 * dx
@@ -58,21 +76,30 @@ func (c *Camera) Update() {
 	c.UpVector = mgl32.Vec4{0.0, 1.0, 0.0, 0.0}
 }
 
+func (c *Camera) Update() {
+	switch c.Type {
+	case FirstPersonCamera:
+		c.HandleFirstPersonCamera()
+	default:
+		c.HandleFirstPersonCamera()
+	}
+	c.Handle()
+}
+
 func (c *Camera) Handle() {
 	viewUniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
 	projectionUniform := gl.GetUniformLocation(shaders.ShaderProgram, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl
 
-	c.View = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
+	c.view = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
 
 	nearplane := float32(-0.1)
 	farplane := float32(-30.0)
 
 	fov := float32(math.Pi / 3.0)
-	c.Projection = math2.Matrix_Perspective(fov, float32(window.ScreenRatio), nearplane, farplane)
+	c.projection = math2.Matrix_Perspective(fov, float32(window.ScreenRatio), nearplane, farplane)
 
-	gl.UniformMatrix4fv(viewUniform, 1, false, &c.View[0])
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &c.Projection[0])
-
+	gl.UniformMatrix4fv(viewUniform, 1, false, &c.view[0])
+	gl.UniformMatrix4fv(projectionUniform, 1, false, &c.projection[0])
 }
 
 func (c *Camera) SetPosition(position mgl32.Vec4) {
@@ -84,4 +111,8 @@ func (c Camera) GetWU() (w, u mgl32.Vec4) {
 	u = math2.Crossproduct(c.UpVector, w)
 	u = u.Normalize()
 	return w, u
+}
+
+func (c *Camera) Follow(p mgl32.Vec4) {
+	c.Position = p
 }

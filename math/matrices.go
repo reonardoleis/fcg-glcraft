@@ -1,7 +1,6 @@
 package math2
 
 import (
-	"log"
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -120,7 +119,7 @@ func Dotproduct(u, v mgl32.Vec4) float32 {
 	v1, v2, v3, v4 := v.X(), v.Y(), v.Z(), v.W()
 
 	if u4 != 0.0 || v4 != 0.0 {
-		log.Fatal("ERROR: Produto escalar não definido para pontos.\n")
+		panic("ERROR: Produto escalar não definido para pontos.\n")
 	}
 
 	return u1*v1 + u2*v2 + u3*v3

@@ -25,6 +25,7 @@ func MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action gl
 func CursorPosCallback(window *glfw.Window, x float64, y float64) {
 	gCursorDeltaX = x - gLastCursorPosX
 	gCursorDeltaY = y - gLastCursorPosY
+
 	gLastCursorPosX = x
 	gLastCursorPosY = y
 

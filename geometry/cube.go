@@ -28,18 +28,6 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 		x - size/2, y - size/2, z - size/2, 1.0, // posição do vértice 5
 		x + size/2, y - size/2, z - size/2, 1.0, // posição do vértice 6
 		x + size/2, y + size/2, z - size/2, 1.0, // posição do vértice 7
-		// Vértices para desenhar o eixo X
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 8
-		x + size, y, z, 1.0, // posição do vértice 9
-		// Vértices para desenhar o eixo Y
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 10
-		x, x + size, 0.0, 1.0, // posição do vértice 11
-		// Vértices para desenhar o eixo Z
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 12
-		x, y, z + size, 1.0, // posição do vértice 13
 	}
 
 	// Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
@@ -119,14 +107,14 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	color_coefficients := []float32{
 		// Cores dos vértices do cubo
 		//  R     G     B     A
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 0
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 1
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 2
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 3
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 4
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 5
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 6
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 7
+		0.0, 0.7, 0.0, 0.0, // cor do vértice 0
+		0.0, 0.8, 0.0, 0.0, // cor do vértice 1
+		0.0, 0.9, 0.0, 0.0, // cor do vértice 2
+		0.0, 1.0, 0.0, 0.0, // cor do vértice 3
+		0.0, 1.0, 0.0, 0.0, // cor do vértice 4
+		0.0, 0.9, 0.0, 0.0, // cor do vértice 5
+		0.0, 0.8, 0.0, 0.0, // cor do vértice 6
+		0.0, 0.7, 0.0, 0.0, // cor do vértice 7
 		// Cores para desenhar o eixo X
 		1.0, 0.0, 0.0, 1.0, // cor do vértice 8
 		1.0, 0.0, 0.0, 1.0, // cor do vértice 9
@@ -256,18 +244,6 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 		x - size/2, y - size/2, z - size/2, 1.0, // posição do vértice 5
 		x + size/2, y - size/2, z - size/2, 1.0, // posição do vértice 6
 		x + size/2, y + size/2, z - size/2, 1.0, // posição do vértice 7
-		// Vértices para desenhar o eixo X
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 8
-		x + size, y, z, 1.0, // posição do vértice 9
-		// Vértices para desenhar o eixo Y
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 10
-		x, x + size, 0.0, 1.0, // posição do vértice 11
-		// Vértices para desenhar o eixo Z
-		//    X      Y     Z     W
-		x, y, z, 1.0, // posição do vértice 12
-		x, y, z + size, 1.0, // posição do vértice 13
 	}
 
 	// Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
@@ -339,43 +315,6 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	// alterar o mesmo. Isso evita bugs.
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
-	// Agora repetimos todos os passos acima para atribuir um novo atributo a
-	// cada vértice: uma cor (veja slides 107-110 do documento Aula_03_Rendering_Pipeline_Grafico.pdf e slide 72 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
-	// Tal cor é definida como coeficientes RGBA: Red, Green, Blue, Alpha;
-	// isto é: Vermelho, Verde, Azul, Alpha (valor de transparência).
-	// Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
-	color_coefficients := []float32{
-		// Cores dos vértices do cubo
-		//  R     G     B     A
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 0
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 1
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 2
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 3
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 4
-		1.0, 0.5, 0.0, 1.0, // cor do vértice 5
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 6
-		0.0, 0.5, 1.0, 1.0, // cor do vértice 7
-		// Cores para desenhar o eixo X
-		1.0, 0.0, 0.0, 1.0, // cor do vértice 8
-		1.0, 0.0, 0.0, 1.0, // cor do vértice 9
-		// Cores para desenhar o eixo Y
-		0.0, 1.0, 0.0, 1.0, // cor do vértice 10
-		0.0, 1.0, 0.0, 1.0, // cor do vértice 11
-		// Cores para desenhar o eixo Z
-		0.0, 0.0, 1.0, 1.0, // cor do vértice 12
-		0.0, 0.0, 1.0, 1.0, // cor do vértice 13
-	}
-	var VBO_color_coefficients_id uint32
-	gl.GenBuffers(1, &VBO_color_coefficients_id)
-	gl.BindBuffer(gl.ARRAY_BUFFER, VBO_color_coefficients_id)
-	gl.BufferData(gl.ARRAY_BUFFER, len(color_coefficients)*4, nil, gl.STATIC_DRAW)
-	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(color_coefficients)*4, gl.Ptr(color_coefficients))
-	location = 1             // "(location = 1)" em "shader_vertex.glsl"
-	number_of_dimensions = 4 // vec4 em "shader_vertex.glsl"
-	gl.VertexAttribPointer(location, number_of_dimensions, gl.FLOAT, false, 0, gl.PtrOffset(0))
-	gl.EnableVertexAttribArray(location)
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-
 	// Vamos então definir polígonos utilizando os vértices do array
 	// model_coefficients.
 	//
@@ -384,24 +323,6 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	// Este vetor "indices" define a TOPOLOGIA (veja slides 64-71 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
 	//
 	indices := []uint32{
-		// Definimos os índices dos vértices que definem as FACES de um cubo
-		// através de 12 triângulos que serão desenhados com o modo de renderização
-		// gl.TRIANGLES.
-		0, 1, 2, // triângulo 1
-		7, 6, 5, // triângulo 2
-		3, 2, 6, // triângulo 3
-		4, 0, 3, // triângulo 4
-		4, 5, 1, // triângulo 5
-		1, 5, 6, // triângulo 6
-		0, 2, 3, // triângulo 7
-		7, 5, 4, // triângulo 8
-		3, 6, 7, // triângulo 9
-		4, 3, 7, // triângulo 10
-		4, 1, 0, // triângulo 11
-		1, 6, 2, // triângulo 12
-		// Definimos os índices dos vértices que definem as ARESTAS de um cubo
-		// através de 12 linhas que serão desenhadas com o modo de renderização
-		// gl.LINES.
 		0, 1, // linha 1
 		1, 2, // linha 2
 		2, 3, // linha 3
@@ -414,21 +335,13 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 		5, 4, // linha 10
 		5, 1, // linha 11
 		7, 3, // linha 12
-		// Definimos os índices dos vértices que definem as linhas dos eixos X, Y,
-		// Z, que serão desenhados com o modo gl.LINES.
-		8, 9, // linha 1
-		10, 11, // linha 2
-		12, 13, // linha 3
 	}
-
-	// Criamos um primeiro objeto virtual (SceneObject) que se refere às faces
-	// coloridas do cubo.
 
 	cubeEdges := renderer.SceneObject{}
 	cubeEdges.Name = ""
-	cubeEdges.FirstIndex = gl.PtrOffset(36 * 4) // Primeiro índice está em indices[0]
-	cubeEdges.NumIndices = 24                   // Último índice está em indices[35]; total de 36 índices.
-	cubeEdges.RenderingMode = gl.LINES          // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	cubeEdges.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
+	cubeEdges.NumIndices = 24              // Último índice está em indices[35]; total de 36 índices.
+	cubeEdges.RenderingMode = gl.LINES     // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
 
 	// Adicionamos o objeto criado acima na nossa cena virtual (g_VirtualScene).
 

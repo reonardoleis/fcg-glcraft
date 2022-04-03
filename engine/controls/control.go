@@ -61,8 +61,9 @@ func (c Controls) GetMouseDeltas() (float64, float64) {
 }
 
 func (c Controls) MousePositionChanged() bool {
-	defer func() {
-		gMousePosChanged = false
-	}()
 	return gMousePosChanged
+}
+
+func (c Controls) FinishMousePositionChanged() {
+	gMousePosChanged = false
 }

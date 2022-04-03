@@ -23,6 +23,8 @@ func NewWindow(title string, width, height int) (*glfw.Window, error) {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.Samples, 32)
+
 	window, _ := glfw.CreateWindow(width, height, title, nil, nil)
 	window.MakeContextCurrent()
 

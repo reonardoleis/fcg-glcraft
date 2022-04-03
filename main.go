@@ -26,7 +26,9 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
+	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
+	"github.com/reonardoleis/fcg-glcraft/world"
 )
 
 const windowWidth = 1280
@@ -38,14 +40,6 @@ func init() {
 }
 
 func main() {
-
-	playerPosition := mgl32.Vec4{-1.0, 10.0, -6.0, 1.0}
-
-	playerHeight := 3
-
-	worldSizeX := 50
-	worldSizeY := 1
-	worldSizeZ := 50
 
 	window, err := window.NewWindow("fcg-glcraft", windowWidth, windowHeight)
 	if err != nil {
@@ -69,12 +63,15 @@ func main() {
 
 	cubeInformation := make(map[int]map[int]map[int]*game_objects.GameObject)
 
-	for x := -worldSizeX; x < worldSizeX; x++ {
+	for x := -world.WorldSizeX; x < world.WorldSizeX; x++ {
 		cubeInformation[x] = make(map[int]map[int]*game_objects.GameObject)
-		for y := 0; y < worldSizeY; y++ {
+		for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
 			cubeInformation[x][y] = make(map[int]*game_objects.GameObject)
-			for z := -worldSizeZ; z < worldSizeZ; z++ {
-				newCube := game_objects.NewCube(float32(x), 0.0, float32(z), 1, true)
+			for z := -world.WorldSizeZ; z < world.WorldSizeZ; z++ {
+				if z == 2 {
+					continue
+				}
+				newCube := game_objects.NewCube(float32(x), float32(y), float32(z), 1, true)
 				mainScene.Add(newCube)
 				cubeInformation[x][y][z] = &newCube
 			}
@@ -91,15 +88,17 @@ func main() {
 	controlHandler := controls.NewControls(window)
 	controlHandler.StartKeyHandlers()
 
-	camera := camera.NewCamera(playerPosition, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player := player.NewPlayer(playerPosition, controlHandler, 0.1, 3)
+	camera := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
+	player := player.NewPlayer(mgl32.Vec4{-1.0, 30.0, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
 	player.SetCamera(camera)
 
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
+	start := float64(0.0)
+	end := float64(0.0)
 	for !window.ShouldClose() {
-
-		gl.ClearColor(0.0, 1.0, 0.0, 1.0)
+		start = glfw.GetTime()
+		gl.ClearColor(0, 1, 1, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.UseProgram(program)
@@ -116,61 +115,48 @@ func main() {
 		// gl.UniformMatrix4fv(view_uniform, 1, false, &view[0])
 		// gl.UniformMatrix4fv(projection_uniform, 1, false, &projection[0])
 
-		maxDist := float64(20)
+		maxDist := float64(50)
 
-		roundedPlayerX := int(math.Round(float64(camera.Position.X())))
-		playerY := float64(camera.Position.Y())
-		roundedPlayerZ := int(math.Round(float64(camera.Position.Z())))
+		roundedPlayerX, _, roundedPlayerZ := player.GetRoundedPosition()
+		playerY := float64(player.Position.Y())
 
-		for x := math.Max(-float64(worldSizeX), float64(roundedPlayerX)-maxDist); x < math.Min(float64(worldSizeX), float64(roundedPlayerX)+maxDist); x++ {
-			for y := 0; y < worldSizeY; y++ {
-				for z := math.Max(-float64(worldSizeZ), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(worldSizeZ), float64(roundedPlayerZ)+maxDist); z++ {
+		for x := math.Max(-float64(world.WorldSizeX), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.WorldSizeX), float64(roundedPlayerX)+maxDist); x++ {
+			for y := -world.WorldSizeY; y < world.WorldSizeY; y++ {
+				for z := math.Max(-float64(world.WorldSizeZ), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.WorldSizeZ), float64(roundedPlayerZ)+maxDist); z++ {
+					if cubeInformation[int(x)][y][int(z)] == nil {
+						continue
+					}
 					cubeInformation[int(x)][y][int(z)].Draw()
 				}
 			}
 		}
 
-		// fmt.Println("X: ", roundedPlayerX, "Y: ", playerY, "Z: ", roundedPlayerZ)
-
-		if roundedPlayerX < -worldSizeX {
-
-			fmt.Println("roundedPlayerX < -worldSizeX")
-			roundedPlayerX = -worldSizeX
-			camera.SetPosition(mgl32.Vec4{-float32(worldSizeX), camera.Position.Y(), camera.Position.Z(), 1.0})
-		}
-
-		if roundedPlayerX > worldSizeX-1 {
-
-			fmt.Println("roundedPlayerX > worldSizeX")
-			roundedPlayerX = worldSizeX - 1
-			camera.SetPosition(mgl32.Vec4{float32(worldSizeX) - 1, camera.Position.Y(), camera.Position.Z(), 1.0})
-		}
-
-		if roundedPlayerZ < -worldSizeZ {
-
-			fmt.Println("roundedPlayerZ > -worldSizeZ")
-			roundedPlayerZ = -worldSizeZ
-			camera.SetPosition(mgl32.Vec4{camera.Position.X(), camera.Position.Y(), -float32(worldSizeZ), 1.0})
-		}
-
-		if roundedPlayerZ > worldSizeZ-1 {
-			fmt.Println("roundedPlayerZ > worldSizeZ")
-			roundedPlayerZ = worldSizeZ - 1
-			camera.SetPosition(mgl32.Vec4{camera.Position.X(), camera.Position.Y(), float32(worldSizeZ) - 1, 1.0})
-		}
+		window.SetTitle(fmt.Sprintf("X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", roundedPlayerX, playerY, roundedPlayerZ, world.WorldSizeX, world.WorldSizeZ))
 
 		//	fmt.Println(roundedPlayerX, worldSizeX)
 		//	fmt.Println(roundedPlayerZ, worldSizeZ)
-		blockBelow := cubeInformation[roundedPlayerX][0][roundedPlayerZ]
 
-		if playerY-float64(playerHeight) <= float64(blockBelow.Position.Y()+(blockBelow.Size/2)) {
-			player.Position = (mgl32.Vec4{camera.Position.X(), blockBelow.Position.Y() + (blockBelow.Size / 2) + float32(playerHeight), camera.Position.Z(), 1.0})
-		} else {
-			player.Position = (mgl32.Vec4{camera.Position.X(), camera.Position.Y() - 0.1, camera.Position.Z(), 1.0})
+		firstTime := true
+		highest := 0
+		for k := range cubeInformation[roundedPlayerX] {
+			if firstTime {
+				highest = k
+				firstTime = false
+			} else if k > highest {
+				highest = k
+			}
 		}
 
+		blockBelow := cubeInformation[roundedPlayerX][highest][roundedPlayerZ]
+
+		player.Fall(blockBelow)
+
+		controlHandler.FinishMousePositionChanged()
 		window.SwapBuffers()
 		glfw.PollEvents()
+		end = glfw.GetTime()
+
+		math2.DeltaTime = end - start
 	}
 }
 

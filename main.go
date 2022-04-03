@@ -65,9 +65,12 @@ func main() {
 
 	cubeInformation := make(map[int]map[int]map[int]*game_objects.GameObject)
 
-	world := world.NewWorld("", mgl32.Vec3{10, 1, 50}, 2300932812397)
+	world := world.NewWorld("", mgl32.Vec3{100, 1, 100}, 2300932812397)
 	world.GenerateWorld()
 	cubeInformation = world.Blocks
+
+	dayTimeDirection := 1
+	dayTimeColor := 1.0
 
 	// model_uniform := gl.GetUniformLocation(program, gl.Str("model\000"))                     // Variável da matriz "model"
 	// view_uniform := gl.GetUniformLocation(program, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
@@ -92,9 +95,24 @@ func main() {
 	start := float64(0.0)
 	end := float64(0.0)
 	for !window.ShouldClose() {
-
+		dayTimeColor += float64(dayTimeDirection) * 0.1 * math2.DeltaTime
+		if dayTimeColor > 1.0 {
+			dayTimeColor = 1.0
+			dayTimeDirection = -1
+		}
+		if dayTimeColor < 0.0 {
+			dayTimeColor = 0.0
+			dayTimeDirection = 1
+		}
 		start = glfw.GetTime()
-		gl.ClearColor(0, 1, 1, 1.0)
+
+		thunder := math2.RandInt(0, 1000)
+		if thunder >= 999 {
+			gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+		} else {
+			gl.ClearColor(0, float32(dayTimeColor), float32(dayTimeColor), 1.0)
+		}
+
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.UseProgram(crosshairProgram)

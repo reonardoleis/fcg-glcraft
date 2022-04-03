@@ -13,8 +13,8 @@ var (
 
 type Block = GameObject
 
-func NewBlock(x, y, z, size float32, withEdges, ephemeral bool) Block {
-	vaoID, sceneObject := geometry.BuildCube(0, 0, 0, size)
+func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, color mgl32.Vec3) Block {
+	vaoID, sceneObject := geometry.BuildCube(0, 0, 0, size, color.X(), color.Y(), color.Z())
 	sceneObject.VaoID = vaoID
 	edges := renderer.SceneObject{}
 

@@ -8,4 +8,5 @@ type SceneObject struct {
 	NumIndices    int
 	RenderingMode int
 	VaoID         uint32
+	Vertexes      []float32
 }

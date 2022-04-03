@@ -12,6 +12,10 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/world"
 )
 
+var (
+	color = mgl32.Vec3{1.0, 0.0, 0.0}
+)
+
 type Player struct {
 	Position                  mgl32.Vec4
 	Camera                    *camera.Camera
@@ -133,7 +137,7 @@ func (p *Player) Update(world *world.World) {
 		p._mouseLeftDownLastUpdate = false
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
-		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false)
+		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, color)
 		p.ClosestEmptySpace = nil
 		p._mouseRightDownLastUpdate = true
 	}
@@ -147,6 +151,39 @@ func (p *Player) Update(world *world.World) {
 		p.WalkingSpeed = p.defaultSpeed
 	}
 
+	if p.ControlHandler.IsDown(int(glfw.Key1)) {
+		color = mgl32.Vec3{1.0, 0.0, 0.0}
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key2)) {
+		color = mgl32.Vec3{1.0, 1.0, 0.0}
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key3)) {
+		color = mgl32.Vec3{0.0, 1.0, 0.0}
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key4)) {
+		color = mgl32.Vec3{0.0, 1.0, 1.0}
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key4)) {
+		color = mgl32.Vec3{0.0, 0.0, 1.0}
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key4)) {
+		color = mgl32.Vec3{1.0, 0.0, 1.0}
+	}
+
+	if world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil ||
+		world.Blocks[int(newPosition.X())][int(newPosition.Y())-1][int(newPosition.Z())] != nil ||
+		world.Blocks[int(newPosition.X())][int(newPosition.Y())+1][int(newPosition.Z())] != nil ||
+		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil ||
+		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
+		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
+		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil {
+		newPosition = p.Position
+	}
 	p.Position = newPosition
 
 	if p.IsJumping() {
@@ -160,33 +197,58 @@ func (p *Player) Update(world *world.World) {
 
 	p.Camera.Follow(p.Position)
 
+	p.HandleBlockInteractions(world)
+
+}
+
+func (p *Player) HandleBlockInteractions(world *world.World) {
 	lookingAtPoint := p.Position.Add(p.Camera.ViewVector)
 	lookingDirection := lookingAtPoint.Sub(p.Position)
-	var hitAt *mgl32.Vec4
-	hitAt = nil
-	bestDist := 0.0
-	for i := 0.0; i < 5.0; i += 0.1 {
-		ray := lookingDirection.Mul(float32(i))
-		if world.Blocks[int(p.Position.X()+ray.X())][int(p.Position.Y()+ray.Y())][int(p.Position.Z()+ray.Z())] != nil {
-			blockPosition := ray.Add(p.Position)
-			if hitAt == nil {
-				hitAt = &blockPosition
-				bestDist = math2.Distance(*hitAt, ray)
-			} else if math2.Distance(blockPosition, ray) < bestDist {
-				bestDist = math2.Distance(blockPosition, ray)
-				hitAt = &blockPosition
+
+	px, py, pz := p.GetRoundedPosition()
+	shouldBreak := false
+
+	// bounding box
+	for s := 0.0; s < 5.0; s += 0.1 {
+		if shouldBreak {
+			break
+		}
+		ray := lookingDirection.Mul(float32(s))
+		ray = mgl32.Vec4{ray.X() + p.Position.X(), ray.Y() + p.Position.Y(), ray.Z() + p.Position.Z(), 0.0}
+		for x := px - 2; x <= px+2; x++ {
+			if shouldBreak {
+				break
+			}
+			for y := py - 2; y <= py+2; y++ {
+				if shouldBreak {
+					break
+				}
+				for z := pz - 2; z <= pz+2; z++ {
+					if world.Blocks[x][y][z] == nil {
+						continue
+					}
+
+					highestX := float32(x) + (world.Blocks[x][y][z].Size)/2
+					highestY := float32(y) + (world.Blocks[x][y][z].Size)/2
+					highestZ := float32(z) + (world.Blocks[x][y][z].Size)/2
+					lowestX := float32(x) - (world.Blocks[x][y][z].Size)/2
+					lowestY := float32(y) - (world.Blocks[x][y][z].Size)/2
+					lowestZ := float32(z) - (world.Blocks[x][y][z].Size)/2
+
+					if ray.X() <= highestX && ray.X() >= lowestX &&
+						ray.Y() <= highestY && ray.Y() >= lowestY &&
+						ray.Z() <= highestZ && ray.Z() >= lowestZ {
+						p.HitAt = &mgl32.Vec4{float32(x), float32(y), float32(z), 1.0}
+						world.Blocks[x][y][z].WithEdges = true
+						shouldBreak = true
+						p.ClosestEmptySpace = world.FindPlacementPosition(*p.HitAt, ray, mgl32.Vec3{highestX, highestY, highestZ},
+							mgl32.Vec3{lowestX, lowestY, lowestZ})
+						break
+					}
+				}
 			}
 		}
 	}
-
-	if hitAt != nil {
-		world.Blocks[int(hitAt.X())][int(hitAt.Y())][int(hitAt.Z())].WithEdges = true
-		p.HitAt = hitAt
-		rx, ry, rz := int(hitAt.X()), int(hitAt.Y()), int(hitAt.Z())
-		k := &mgl32.Vec4{float32(rx), float32(ry), float32(rz), 0.0}
-		p.ClosestEmptySpace = world.FindPlacementPosition(*k, p.Position)
-	}
-
 }
 
 func (p *Player) HandleWorldLimits(world *world.World) {

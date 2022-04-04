@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	ShaderProgram uint32
+	ShaderProgramDefault   uint32
+	ShaderProgramCrosshair uint32
 )
 
 func LoadFragmentShader(name string) (string, error) {
@@ -83,7 +84,53 @@ func InitShaderProgram(name string) (uint32, error) {
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
-	ShaderProgram = program
+	ShaderProgramDefault = program
+	return program, nil
+}
+
+func InitShaderProgram2(name string) (uint32, error) {
+	vertexShaderSource, err := LoadVertexShader(name)
+	if err != nil {
+		return 0, err
+	}
+
+	fragmentShaderSource, err := LoadFragmentShader(name)
+	if err != nil {
+		return 0, err
+	}
+
+	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
+	if err != nil {
+		return 0, err
+	}
+
+	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
+	if err != nil {
+		return 0, err
+	}
+
+	program := gl.CreateProgram()
+
+	gl.AttachShader(program, vertexShader)
+	gl.AttachShader(program, fragmentShader)
+	gl.LinkProgram(program)
+
+	var status int32
+	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
+	if status == gl.FALSE {
+		var logLength int32
+		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
+
+		log := strings.Repeat("\x00", int(logLength+1))
+		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
+
+		return 0, fmt.Errorf("failed to link program: %v", log)
+	}
+
+	gl.DeleteShader(vertexShader)
+	gl.DeleteShader(fragmentShader)
+
+	ShaderProgramCrosshair = program
 	return program, nil
 }
 

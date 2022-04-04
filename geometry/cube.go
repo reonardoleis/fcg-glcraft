@@ -5,7 +5,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/renderer"
 )
 
-func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
+func BuildCube(x, y, z, size, colorR, colorG, colorB float32) (uint32, renderer.SceneObject) {
 	// Primeiro, definimos os atributos de cada vértice.
 
 	// A posição de cada vértice é definida por coeficientes em um sistema de
@@ -107,14 +107,14 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	color_coefficients := []float32{
 		// Cores dos vértices do cubo
 		//  R     G     B     A
-		0.0, 0.7, 0.0, 0.0, // cor do vértice 0
-		0.0, 0.8, 0.0, 0.0, // cor do vértice 1
-		0.0, 0.9, 0.0, 0.0, // cor do vértice 2
-		0.0, 1.0, 0.0, 0.0, // cor do vértice 3
-		0.0, 1.0, 0.0, 0.0, // cor do vértice 4
-		0.0, 0.9, 0.0, 0.0, // cor do vértice 5
-		0.0, 0.8, 0.0, 0.0, // cor do vértice 6
-		0.0, 0.7, 0.0, 0.0, // cor do vértice 7
+		colorR, colorG, colorB, 0.0, // cor do vértice 0
+		colorR - 0.1, colorG - 0.1, colorB - 0.1, 0.0, // cor do vértice 1
+		colorR - 0.2, colorG - 0.2, colorB - 0.2, 0.0, // cor do vértice 2
+		colorR - 0.3, colorG - 0.3, colorB - 0.3, 0.0, // cor do vértice 3
+		colorR - 0.3, colorG - 0.3, colorB - 0.3, 0.0, // cor do vértice 4
+		colorR - 0.2, colorG - 0.2, colorB - 0.2, 0.0, // cor do vértice 5
+		colorR - 0.1, colorG - 0.1, colorB - 0.1, 0.0, // cor do vértice 6
+		colorR, colorG, colorB, 0.0, // cor do vértice 7
 		// Cores para desenhar o eixo X
 		1.0, 0.0, 0.0, 1.0, // cor do vértice 8
 		1.0, 0.0, 0.0, 1.0, // cor do vértice 9
@@ -189,6 +189,7 @@ func BuildCube(x, y, z, size float32) (uint32, renderer.SceneObject) {
 	cube_faces.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
 	cube_faces.NumIndices = 36              // Último índice está em indices[35]; total de 36 índices.
 	cube_faces.RenderingMode = gl.TRIANGLES // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	cube_faces.Vertexes = model_coefficients
 
 	// Adicionamos o objeto criado acima na nossa cena virtual (g_VirtualScene).
 

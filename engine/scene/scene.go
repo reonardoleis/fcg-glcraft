@@ -10,6 +10,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
+	"github.com/reonardoleis/fcg-glcraft/game_objects"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
@@ -78,6 +79,13 @@ func (s *Scene) Update(window glfw.Window) {
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()
 	playerY := float64(s.Player.Position.Y())
+
+	if s.ControlHandler.IsToggled(int(glfw.KeyZ)) {
+		game_objects.BlockEdgesOnly = true
+	} else {
+		game_objects.BlockEdgesOnly = false
+	}
+
 	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)})
 
 	window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,

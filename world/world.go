@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
+	math2 "github.com/reonardoleis/fcg-glcraft/math"
 )
 
 type WorldBlocks = map[int]map[int]map[int]*game_objects.Block
@@ -186,7 +187,9 @@ func (w *World) GenerateWorld() {
 
 	generatedWorld := make(WorldBlocks)
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
-		generatedWorld[x] = make(map[int]map[int]*game_objects.Block)
+		if len(generatedWorld[x]) == 0 {
+			generatedWorld[x] = make(map[int]map[int]*game_objects.Block)
+		}
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 
 			// fmt.Println(y)
@@ -197,10 +200,59 @@ func (w *World) GenerateWorld() {
 				blockType = game_objects.BlockDirt
 			} else if blockTypeNoise > 0.06 && blockTypeNoise <= 0.1 {
 				blockType = game_objects.BlockGrass
-			} else {
-				blockType = game_objects.BlockSand
 			}
 			y := 4 + math.Round(float64(w.Size.Y()-4)*ValueNoise_2D(float64(x), float64(z)))
+
+			if math2.RandInt(0, 100) >= 99 {
+				for i := y; i <= y+3; i++ {
+					if generatedWorld[x][int(i)] == nil {
+						generatedWorld[x][int(i)] = make(map[int]*game_objects.Block)
+					}
+					if float32(i) > w.Size.Y() {
+						w.Size = mgl32.Vec3{w.Size.X(), float32(i) + 1, w.Size.Z()}
+					}
+					tree := game_objects.NewBlock(float32(x), float32(i), float32(z), 1, true, false, uint(game_objects.BlockWood))
+					tree.WithEdges = false
+					generatedWorld[x][int(i)][z] = &tree
+				}
+
+				if generatedWorld[x][int(y)+4] == nil {
+					generatedWorld[x][int(y)+4] = make(map[int]*game_objects.Block)
+				}
+
+				if generatedWorld[x][int(y)+5] == nil {
+					generatedWorld[x][int(y)+5] = make(map[int]*game_objects.Block)
+				}
+
+				leaves0 := game_objects.NewBlock(float32(x), float32(y+4), float32(z), 1, true, false, uint(game_objects.BlockLeaves))
+				leaves1 := game_objects.NewBlock(float32(x), float32(y+5), float32(z), 1, true, false, uint(game_objects.BlockLeaves))
+				generatedWorld[x][int(y)+4][z] = &leaves0
+				generatedWorld[x][int(y)+5][z] = &leaves1
+
+				for xx := x - 1; xx <= x+1; xx++ {
+
+					for zz := z - 1; zz <= z+1; zz++ {
+
+						if xx == x && zz == z {
+							continue
+						}
+						if len(generatedWorld[xx]) == 0 {
+							generatedWorld[xx] = make(map[int]map[int]*game_objects.Block)
+						}
+						if len(generatedWorld[xx][int(y+4)]) == 0 {
+							generatedWorld[xx][int(y+4)] = make(map[int]*game_objects.Block)
+						}
+						if len(generatedWorld[xx][int(y+3)]) == 0 {
+							generatedWorld[xx][int(y+3)] = make(map[int]*game_objects.Block)
+						}
+						leaves1 := game_objects.NewBlock(float32(xx), float32(y+4), float32(zz), 1, true, false, uint(game_objects.BlockLeaves))
+						generatedWorld[xx][int(y+4)][zz] = &leaves1
+						leaves2 := game_objects.NewBlock(float32(xx), float32(y+3), float32(zz), 1, true, false, uint(game_objects.BlockLeaves))
+						generatedWorld[xx][int(y+3)][zz] = &leaves2
+					}
+				}
+
+			}
 
 			for i := int(y); i >= int(math.Max(0, float64(int(y)-4))); i-- {
 				if generatedWorld[x][i] == nil {
@@ -221,7 +273,7 @@ func (w *World) GenerateWorld() {
 }
 
 func (w *World) Update(roundedPlayerPosition mgl32.Vec3) {
-	maxDist := float64(25)
+	maxDist := float64(30)
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := roundedPlayerPosition.Elem()
 
@@ -232,7 +284,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3) {
 					continue
 				}
 
-				w.Blocks[int(x)][int(y)][int(z)].Draw()
+				w.Blocks[int(x)][int(y)][int(z)].Draw2(w.Blocks)
 				w.Blocks[int(x)][int(y)][int(z)].WithEdges = false
 				if w.Blocks[int(x)][int(y)][int(z)].Ephemeral {
 					w.Blocks[int(x)][int(y)][int(z)] = nil

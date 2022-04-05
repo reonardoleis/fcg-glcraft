@@ -14,6 +14,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"path"
 	"runtime"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
@@ -26,6 +27,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
+	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
 	"github.com/reonardoleis/fcg-glcraft/world"
@@ -59,12 +61,19 @@ func main() {
 		panic(err)
 	}
 
-	_, err = shaders.InitShaderProgram2("crosshair")
+	_, err = shaders.InitShaderProgram2("crosshair") // LoadShaderFromFiles(...)
 	if err != nil {
 		panic(err)
 	}
-	game_objects.InitBlock(1, 0.0, 1.0, 0.0)
-	world := world.NewWorld("", mgl32.Vec3{100, 16, 100}, 2300932812397)
+	game_objects.InitBlock() // LoadTextureImage(...)
+
+	for i := 0; i < 5; i++ {
+		geometry.BuildFace(i) // BuildTriangles...
+	}
+
+	geometry.BuildFaceEdges()
+
+	world := world.NewWorld("", mgl32.Vec3{50, 16, 50}, 2300932812397)
 	world.GenerateWorld()
 
 	dayTimeDirection := 1
@@ -77,15 +86,15 @@ func main() {
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.Enable(gl.CULL_FACE)
-	gl.CullFace(gl.BACK)
-	gl.FrontFace(gl.CCW)
+	//gl.Enable(gl.CULL_FACE)
+	//gl.CullFace(gl.BACK)
+	//gl.FrontFace(gl.CCW)
 
 	controlHandler := controls.NewControls(window)
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{-1.0, 32, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 32, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
@@ -104,7 +113,7 @@ func main() {
 	start := float64(0.0)
 	end := float64(0.0)
 	for !window.ShouldClose() {
-		dayTimeColor += float64(dayTimeDirection) * 0.1 * math2.DeltaTime
+		dayTimeColor += (float64(dayTimeDirection) * 0.1 * math2.DeltaTime) * 0
 		if dayTimeColor > 1.0 {
 			dayTimeColor = 1.0
 			dayTimeDirection = -1
@@ -139,7 +148,9 @@ func main() {
 }
 
 func newTexture(file string) (uint32, error) {
-	imgFile, err := os.Open(file)
+	_, filename, _, _ := runtime.Caller(0)
+	textureFile := fmt.Sprintf("%v/%v", path.Dir(filename), file)
+	imgFile, err := os.Open(textureFile)
 	if err != nil {
 		return 0, fmt.Errorf("texture %q not found on disk: %v", file, err)
 	}

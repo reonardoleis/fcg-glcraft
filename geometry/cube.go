@@ -2,10 +2,9 @@ package geometry
 
 import (
 	"github.com/go-gl/gl/v3.3-core/gl"
-	"github.com/reonardoleis/fcg-glcraft/engine/renderer"
 )
 
-func BuildCube(x, y, z, size, colorR, colorG, colorB float32) (uint32, renderer.SceneObject) {
+func BuildCube(x, y, z, size, colorR, colorG, colorB float32) GeometryInformation {
 	// Primeiro, definimos os atributos de cada vértice.
 
 	// A posição de cada vértice é definida por coeficientes em um sistema de
@@ -184,13 +183,6 @@ func BuildCube(x, y, z, size, colorR, colorG, colorB float32) (uint32, renderer.
 	// Criamos um primeiro objeto virtual (SceneObject) que se refere às faces
 	// coloridas do cubo.
 
-	cube_faces := renderer.SceneObject{}
-	cube_faces.Name = ""
-	cube_faces.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
-	cube_faces.NumIndices = 36              // Último índice está em indices[35]; total de 36 índices.
-	cube_faces.RenderingMode = gl.TRIANGLES // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
-	cube_faces.Vertexes = model_coefficients
-
 	// Adicionamos o objeto criado acima na nossa cena virtual (g_VirtualScene).
 
 	// Criamos um buffer OpenGL para armazenar os índices acima
@@ -219,10 +211,16 @@ func BuildCube(x, y, z, size, colorR, colorG, colorB float32) (uint32, renderer.
 
 	// Retornamos o ID do VAO. Isso é tudo que será necessário para renderizar
 	// os triângulos definidos acima. Veja a chamada glDrawElements() em main().
-	return vertex_array_object_id, cube_faces
+	cube_faces := GeometryInformation{}
+	cube_faces.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
+	cube_faces.NumIndices = 36              // Último índice está em indices[35]; total de 36 índices.
+	cube_faces.RenderingMode = gl.TRIANGLES // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	cube_faces.Vertexes = model_coefficients
+	cube_faces.VaoID = vertex_array_object_id
+	return cube_faces
 }
 
-func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
+func BuildCubeEdges(x, y, z, size float32) GeometryInformation {
 	// Primeiro, definimos os atributos de cada vértice.
 
 	// A posição de cada vértice é definida por coeficientes em um sistema de
@@ -338,12 +336,6 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 		7, 3, // linha 12
 	}
 
-	cubeEdges := renderer.SceneObject{}
-	cubeEdges.Name = ""
-	cubeEdges.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
-	cubeEdges.NumIndices = 24              // Último índice está em indices[35]; total de 36 índices.
-	cubeEdges.RenderingMode = gl.LINES     // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
-
 	// Adicionamos o objeto criado acima na nossa cena virtual (g_VirtualScene).
 
 	// Criamos um buffer OpenGL para armazenar os índices acima
@@ -372,5 +364,10 @@ func BuildCubeEdges(x, y, z, size float32) (uint32, renderer.SceneObject) {
 
 	// Retornamos o ID do VAO. Isso é tudo que será necessário para renderizar
 	// os triângulos definidos acima. Veja a chamada glDrawElements() em main().
-	return vertex_array_object_id, cubeEdges
+	cubeEdges := GeometryInformation{}
+	cubeEdges.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
+	cubeEdges.NumIndices = 24              // Último índice está em indices[35]; total de 36 índices.
+	cubeEdges.RenderingMode = gl.LINES     // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	cubeEdges.VaoID = vertex_array_object_id
+	return cubeEdges
 }

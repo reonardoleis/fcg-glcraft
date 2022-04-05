@@ -66,7 +66,7 @@ func (p Player) IsJumping() bool {
 	return p._isJumping
 }
 
-func (p *Player) SetCamera(camera *camera.Camera) {
+func (p *Player) BeFollowedByCamera(camera *camera.Camera) {
 	p.Camera = camera
 }
 
@@ -293,7 +293,7 @@ func (p Player) GetFlooredPosition() (int, int, int) {
 	return roundedX, roundedY, roundedZ
 }
 
-func (p *Player) Fall(blockBelow *game_objects.GameObject) {
+func (p *Player) Fall(blockBelow *game_objects.Block) {
 	if blockBelow != nil && float64(p.Position.Y()-p.Height) <= float64(blockBelow.Position.Y()+(blockBelow.Size/2)) {
 		p.IsGrounded = true
 		// player.Position = (mgl32.Vec4{player.Position.X(), blockBelow.Position.Y() + (blockBelow.Size / 2) + float32(playerHeight), player.Position.Z(), 1.0})

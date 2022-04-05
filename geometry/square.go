@@ -5,7 +5,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-func BuildLine(a, b mgl32.Vec3) (uint32, GeometryInformation) {
+func BuildSquare(v1, v2, v3, v4 mgl32.Vec3, colorR, colorG, colorB float32) GeometryInformation {
 	// Primeiro, definimos os atributos de cada vértice.
 
 	// A posição de cada vértice é definida por coeficientes em um sistema de
@@ -20,8 +20,10 @@ func BuildLine(a, b mgl32.Vec3) (uint32, GeometryInformation) {
 	model_coefficients := []float32{
 		// Vértices de um cubo
 		//    X      Y     Z     W
-		a.X(), a.Y(), a.Z(), 1.0, // posição do vértice 0
-		b.X(), b.Y(), b.Z(), 1.0, // posição do vértice 1
+		v1.X(), v1.Y(), v1.Z(), 1.0, // posição do vértice 0
+		v2.X(), v2.Y(), v2.Z(), 1.0, // posição do vértice 1
+		v3.X(), v3.Y(), v3.Z(), 1.0, // posição do vértice 2
+		v4.X(), v4.Y(), v4.Z(), 1.0, // posição do vértice 3
 	}
 
 	// Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
@@ -93,6 +95,30 @@ func BuildLine(a, b mgl32.Vec3) (uint32, GeometryInformation) {
 	// alterar o mesmo. Isso evita bugs.
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
+	// Agora repetimos todos os passos acima para atribuir um novo atributo a
+	// cada vértice: uma cor (veja slides 107-110 do documento Aula_03_Rendering_Pipeline_Grafico.pdf e slide 72 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
+	// Tal cor é definida como coeficientes RGBA: Red, Green, Blue, Alpha;
+	// isto é: Vermelho, Verde, Azul, Alpha (valor de transparência).
+	// Conversaremos sobre sistemas de cores nas aulas de Modelos de Iluminação.
+	color_coefficients := []float32{
+		// Cores dos vértices do cubo
+		//  R     G     B     A
+		colorR, colorG, colorB, 0.0, // cor do vértice 0
+		colorR - 0.1, colorG - 0.1, colorB - 0.1, 0.0, // cor do vértice 1
+		colorR - 0.2, colorG - 0.2, colorB - 0.2, 0.0, // cor do vértice 2
+		colorR - 0.3, colorG - 0.3, colorB - 0.3, 0.0, // cor do vértice 3
+	}
+	var VBO_color_coefficients_id uint32
+	gl.GenBuffers(1, &VBO_color_coefficients_id)
+	gl.BindBuffer(gl.ARRAY_BUFFER, VBO_color_coefficients_id)
+	gl.BufferData(gl.ARRAY_BUFFER, len(color_coefficients)*4, nil, gl.STATIC_DRAW)
+	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(color_coefficients)*4, gl.Ptr(color_coefficients))
+	location = 1             // "(location = 1)" em "shader_vertex.glsl"
+	number_of_dimensions = 4 // vec4 em "shader_vertex.glsl"
+	gl.VertexAttribPointer(location, number_of_dimensions, gl.FLOAT, false, 0, gl.PtrOffset(0))
+	gl.EnableVertexAttribArray(location)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
+
 	// Vamos então definir polígonos utilizando os vértices do array
 	// model_coefficients.
 	//
@@ -101,14 +127,11 @@ func BuildLine(a, b mgl32.Vec3) (uint32, GeometryInformation) {
 	// Este vetor "indices" define a TOPOLOGIA (veja slides 64-71 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
 	//
 	indices := []uint32{
-		0, 1, // linha 1
+		0, 1, 2, 2, 3, 0,
 	}
 
-	line := GeometryInformation{}
-
-	line.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
-	line.NumIndices = 2               // Último índice está em indices[35]; total de 36 índices.
-	line.RenderingMode = gl.LINES     // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	// Criamos um primeiro objeto virtual (SceneObject) que se refere às faces
+	// coloridas do cubo.
 
 	// Adicionamos o objeto criado acima na nossa cena virtual (g_VirtualScene).
 
@@ -138,5 +161,11 @@ func BuildLine(a, b mgl32.Vec3) (uint32, GeometryInformation) {
 
 	// Retornamos o ID do VAO. Isso é tudo que será necessário para renderizar
 	// os triângulos definidos acima. Veja a chamada glDrawElements() em main().
-	return vertex_array_object_id, line
+	square := GeometryInformation{}
+	square.FirstIndex = gl.PtrOffset(0) // Primeiro índice está em indices[0]
+	square.NumIndices = len(indices)    // Último índice está em indices[35]; total de 36 índices.
+	square.RenderingMode = gl.TRIANGLES // Índices correspondem ao tipo de rasterização gl.TRIANGLES.
+	square.Vertexes = model_coefficients
+	square.VaoID = vertex_array_object_id
+	return square
 }

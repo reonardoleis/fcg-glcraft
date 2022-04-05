@@ -22,10 +22,10 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	rendererPkg "github.com/reonardoleis/fcg-glcraft/engine/renderer"
+	"github.com/reonardoleis/fcg-glcraft/engine/scene"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
-	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
 	"github.com/reonardoleis/fcg-glcraft/world"
@@ -54,20 +54,18 @@ func main() {
 
 	//mainScene := scene.NewScene()
 
-	program, err := shaders.InitShaderProgram("standard")
+	_, err = shaders.InitShaderProgram("standard")
 	if err != nil {
 		panic(err)
 	}
 
-	crosshairProgram, err := shaders.InitShaderProgram2("crosshair")
-
-	gl.UseProgram(program)
-
-	cubeInformation := make(map[int]map[int]map[int]*game_objects.GameObject)
-
-	world := world.NewWorld("", mgl32.Vec3{100, 1, 100}, 2300932812397)
+	_, err = shaders.InitShaderProgram2("crosshair")
+	if err != nil {
+		panic(err)
+	}
+	game_objects.InitBlock(1, 0.0, 1.0, 0.0)
+	world := world.NewWorld("", mgl32.Vec3{100, 16, 100}, 2300932812397)
 	world.GenerateWorld()
-	cubeInformation = world.Blocks
 
 	dayTimeDirection := 1
 	dayTimeColor := 1.0
@@ -86,11 +84,22 @@ func main() {
 	controlHandler := controls.NewControls(window)
 	controlHandler.StartKeyHandlers()
 
-	camera := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player := player.NewPlayer(mgl32.Vec4{-1.0, 30.0, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
-	player.SetCamera(camera)
-
+	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
+	player1 := player.NewPlayer(mgl32.Vec4{-1.0, 32, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+
+	camera2 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
+	player2 := player.NewPlayer(mgl32.Vec4{15.0, 30.0, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player2.BeFollowedByCamera(camera2)
+
+	sceneManager := scene.NewSceneManager()
+	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene)
+	scene2 := scene.NewScene(world, camera2, &player2, controlHandler, scene.GameScene)
+
+	sceneManager.AddScene(scene1)
+	sceneManager.AddScene(scene2)
+	sceneManager.SetActiveScene(0)
 
 	start := float64(0.0)
 	end := float64(0.0)
@@ -113,56 +122,16 @@ func main() {
 			gl.ClearColor(0, float32(dayTimeColor), float32(dayTimeColor), 1.0)
 		}
 
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-		gl.UseProgram(crosshairProgram)
-
-		geometry.DrawCrosshair()
-
-		gl.UseProgram(program)
-		camera.Update()
-		player.Update(world)
-
-		if controlHandler.IsToggled(int(glfw.KeyZ)) {
-			game_objects.BlockEdgesOnly = true
-		} else {
-			game_objects.BlockEdgesOnly = false
-		}
-
-		// gl.UniformMatrix4fv(view_uniform, 1, false, &view[0])
-		// gl.UniformMatrix4fv(projection_uniform, 1, false, &projection[0])
-
-		maxDist := float64(30)
-
-		roundedPlayerX, roundedPlayerY, roundedPlayerZ := player.GetRoundedPosition()
-		playerY := float64(player.Position.Y())
-
-		for x := math.Max(-float64(world.Size.X()), float64(roundedPlayerX)-maxDist); x < math.Min(float64(world.Size.X()), float64(roundedPlayerX)+maxDist); x++ {
-			for y := math.Max(-float64(world.Size.Y()), float64(roundedPlayerY)-maxDist); y < math.Min(float64(world.Size.Y()), float64(roundedPlayerY)+maxDist); y++ {
-				for z := math.Max(-float64(world.Size.Z()), float64(roundedPlayerZ)-maxDist); z < math.Min(float64(world.Size.Z()), float64(roundedPlayerZ)+maxDist); z++ {
-					if cubeInformation[int(x)][int(y)][int(z)] == nil {
-						continue
-					}
-
-					cubeInformation[int(x)][int(y)][int(z)].Draw()
-					cubeInformation[int(x)][int(y)][int(z)].WithEdges = false
-					if cubeInformation[int(x)][int(y)][int(z)].Ephemeral {
-						cubeInformation[int(x)][int(y)][int(z)] = nil
-					}
-
-				}
+		if controlHandler.IsDown(int(glfw.KeyEnter)) {
+			if sceneManager.ActiveScene == 0 {
+				sceneManager.SetActiveScene(1)
+			} else {
+				sceneManager.SetActiveScene(0)
 			}
 		}
 
-		window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime, roundedPlayerX, playerY, roundedPlayerZ, world.Size.X(), world.Size.Z()))
+		sceneManager.HandleActiveScene(*window)
 
-		blockBelow := world.FindHighestBlock(roundedPlayerX, roundedPlayerZ)
-
-		player.Fall(blockBelow)
-
-		controlHandler.FinishMousePositionChanged()
-		window.SwapBuffers()
-		glfw.PollEvents()
 		end = glfw.GetTime()
 
 		math2.DeltaTime = end - start

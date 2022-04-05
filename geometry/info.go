@@ -1,9 +1,8 @@
-package renderer
+package geometry
 
 import "unsafe"
 
-type SceneObject struct {
-	Name          string
+type GeometryInformation struct {
 	FirstIndex    unsafe.Pointer
 	NumIndices    int
 	RenderingMode int

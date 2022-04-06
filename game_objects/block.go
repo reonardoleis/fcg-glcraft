@@ -204,7 +204,7 @@ func (b Block) CountNeighbors() int {
 func (b Block) Draw2() {
 
 	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
-
+	black := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("black\000"))         // Variável da matriz "model"
 	blockTextures := getBlockTexture(b.BlockType)
 	north := math2.North(b.Position, b.Size)
 	south := math2.South(b.Position, b.Size)
@@ -238,13 +238,26 @@ func (b Block) Draw2() {
 			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
 
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
+			gl.Uniform1i(black, 0)
 			gl.DrawElements(
 				uint32(geometry.Faces[b.BlockType].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
 				int32(geometry.Faces[b.BlockType].NumIndices),
 				gl.UNSIGNED_INT,
 				geometry.Faces[b.BlockType].FirstIndex,
 			)
+			if b.WithEdges {
 
+				faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
+				gl.BindVertexArray(geometry.CommonFaceEdgeGeometry.VaoID)
+				gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
+				gl.Uniform1i(black, 1)
+				gl.DrawElements(
+					uint32(geometry.CommonFaceEdgeGeometry.RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
+					int32(geometry.CommonFaceEdgeGeometry.NumIndices),
+					gl.UNSIGNED_INT,
+					geometry.CommonFaceEdgeGeometry.FirstIndex,
+				)
+			}
 		} else {
 			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
 			gl.BindVertexArray(geometry.CommonFaceEdgeGeometry.VaoID)

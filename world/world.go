@@ -403,6 +403,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 				}
 			}
 			populatedBlock.Draw2()
+			populatedBlock.WithEdges = false
 		}
 
 	}

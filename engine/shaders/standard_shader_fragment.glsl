@@ -15,7 +15,7 @@ in vec4 position_model;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
+uniform bool black;
 
 
 // Variáveis para acesso das imagens de textura
@@ -65,6 +65,9 @@ void main()
 
     
     color.rgb = vec3(Kd0.x, Kd0.y, Kd0.z);
+    if(black){
+         color.rgb = vec3(0.0, 0.0, 0.0);
+    }
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:

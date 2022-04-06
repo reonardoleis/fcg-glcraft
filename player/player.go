@@ -1,6 +1,7 @@
 package player
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -130,13 +131,15 @@ func (p *Player) CheckCollisions(futurePosition mgl32.Vec3, blocks world.WorldBl
 				}
 				blockBoundingBox := collisions.NewCubeBoundingBox(blocks[x][y][z].Position.Vec3(), float32(configs.BlockSize), float32(configs.BlockSize))
 				if p.Collider.Collides(*futureBoundingBox, *blockBoundingBox) {
-
+					blocks[x][y][z].WithEdges = true
 					if x == playerX && z == playerZ && y == playerY-1 {
 						collidesBelow = true
 					} else if x == playerX && z == playerZ && y == playerY+1 {
 						collidesAbove = true
 					} else {
 						collidesSides = true
+						fmt.Println("Bloco: ", x, y, z, "Player: ", playerX, playerY, playerZ)
+
 					}
 				}
 
@@ -296,7 +299,7 @@ func (p *Player) HandleBlockInteractions(world *world.World) {
 						ray.Y() <= highestY && ray.Y() >= lowestY &&
 						ray.Z() <= highestZ && ray.Z() >= lowestZ {
 						p.HitAt = &mgl32.Vec4{float32(x), float32(y), float32(z), 1.0}
-						world.Blocks[x][y][z].WithEdges = true
+						//world.Blocks[x][y][z].WithEdges = true
 						shouldBreak = true
 						p.ClosestEmptySpace = world.FindPlacementPosition(*p.HitAt, ray, mgl32.Vec3{highestX, highestY, highestZ},
 							mgl32.Vec3{lowestX, lowestY, lowestZ})

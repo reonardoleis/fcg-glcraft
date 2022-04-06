@@ -11,6 +11,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+
 // Atributos de v�rtice que ser�o gerados como sa�da ("out") pelo Vertex Shader.
 // ** Estes ser�o interpolados pelo rasterizador! ** gerando, assim, valores
 // para cada fragmento, os quais ser�o recebidos como entrada pelo Fragment

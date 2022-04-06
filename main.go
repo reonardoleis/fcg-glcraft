@@ -67,25 +67,19 @@ func main() {
 	}
 	game_objects.InitBlock() // LoadTextureImage(...)
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 7; i++ {
 		geometry.BuildFace(i) // BuildTriangles...
 	}
 
 	geometry.BuildFaceEdges()
 
-	world := world.NewWorld("", mgl32.Vec3{50, 16, 50}, 2300932812397)
+	world := world.NewWorld("", mgl32.Vec3{32, 128, 32}, 2300932812397)
 	world.GenerateWorld()
-
-	dayTimeDirection := 1
-	dayTimeColor := 1.0
-
-	// model_uniform := gl.GetUniformLocation(program, gl.Str("model\000"))                     // Variável da matriz "model"
-	// view_uniform := gl.GetUniformLocation(program, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
-	// projection_uniform := gl.GetUniformLocation(program, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl
-	// render_as_black_uniform := gl.GetUniformLocation(program, gl.Str("render_as_black\000")) // Variável booleana em shader_vertex.glsl
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	//gl.Enable(gl.CULL_FACE)
 	//gl.CullFace(gl.BACK)
 	//gl.FrontFace(gl.CCW)
@@ -94,42 +88,23 @@ func main() {
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{0.0, 32, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
-	camera2 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player2 := player.NewPlayer(mgl32.Vec4{15.0, 30.0, -6.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
-	player2.BeFollowedByCamera(camera2)
-
 	sceneManager := scene.NewSceneManager()
 	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene)
-	scene2 := scene.NewScene(world, camera2, &player2, controlHandler, scene.GameScene)
 
 	sceneManager.AddScene(scene1)
-	sceneManager.AddScene(scene2)
 	sceneManager.SetActiveScene(0)
 
 	start := float64(0.0)
 	end := float64(0.0)
+
 	for !window.ShouldClose() {
-		dayTimeColor += (float64(dayTimeDirection) * 0.1 * math2.DeltaTime) * 0
-		if dayTimeColor > 1.0 {
-			dayTimeColor = 1.0
-			dayTimeDirection = -1
-		}
-		if dayTimeColor < 0.0 {
-			dayTimeColor = 0.0
-			dayTimeDirection = 1
-		}
 		start = glfw.GetTime()
 
-		thunder := math2.RandInt(0, 1000)
-		if thunder >= 999 {
-			gl.ClearColor(1.0, 1.0, 1.0, 1.0)
-		} else {
-			gl.ClearColor(0, float32(dayTimeColor), float32(dayTimeColor), 1.0)
-		}
+		gl.ClearColor(0, 1.0, 0.9, 1.0)
 
 		if controlHandler.IsDown(int(glfw.KeyEnter)) {
 			if sceneManager.ActiveScene == 0 {

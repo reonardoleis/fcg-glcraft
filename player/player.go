@@ -88,6 +88,10 @@ func (p *Player) HandleLookDirection() {
 	p.MovementVector = mgl32.Vec4{vx, vy, vz, 0.0}
 }
 
+func (p Player) GetFrontAndBackDirections() (behind mgl32.Vec3, front mgl32.Vec3) {
+	return p.MovementVector.Mul(-2).Add(p.Position).Vec3(), p.MovementVector.Vec3().Add(p.Position.Vec3())
+}
+
 func (p Player) GetMovementVector() (w, u mgl32.Vec4) {
 	w = p.MovementVector.Mul(-1).Normalize()
 	u = math2.Crossproduct(math2.UpVector, w)
@@ -130,14 +134,14 @@ func (p *Player) Update(world *world.World) {
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) && !p._mouseLeftDownLastUpdate && p.HitAt != nil {
 		p._mouseLeftDownLastUpdate = true
-		world.Blocks[int(p.HitAt.X())][int(p.HitAt.Y())][int(p.HitAt.Z())] = nil
+		world.RemoveBlockFrom(*p.HitAt)
 		p.HitAt = nil
 	}
 	if !p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) {
 		p._mouseLeftDownLastUpdate = false
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
-		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, color)
+		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, mgl32.Vec3{})
 		p.ClosestEmptySpace = nil
 		p._mouseRightDownLastUpdate = true
 	}
@@ -198,7 +202,6 @@ func (p *Player) Update(world *world.World) {
 	p.Camera.Follow(p.Position)
 
 	p.HandleBlockInteractions(world)
-
 }
 
 func (p *Player) HandleBlockInteractions(world *world.World) {
@@ -209,7 +212,7 @@ func (p *Player) HandleBlockInteractions(world *world.World) {
 	shouldBreak := false
 
 	// bounding box
-	for s := 0.0; s < 5.0; s += 0.1 {
+	for s := 0.0; s < 5.0; s += 1 {
 		if shouldBreak {
 			break
 		}

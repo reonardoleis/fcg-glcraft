@@ -28,6 +28,8 @@ const (
 	BlockWood
 	BlockLeaves
 	BlockSand
+	BlockStone
+	BlockWater
 )
 
 var (
@@ -38,8 +40,26 @@ var (
 	grassTopTexture   uint32 = 0
 	woodSideTexture   uint32 = 0
 	leavesTexture     uint32 = 0
+	stoneTexture      uint32 = 0
+	waterTexture      uint32 = 0
+	sandTexture       uint32 = 0
 	numTexturesLoaded        = 0
+	model_uniform     int32
 )
+
+type Block struct {
+	Position mgl32.Vec4
+	Size     float32
+	Model    mgl32.Mat4
+	// ModelGeometry geometry.GeometryInformation
+	WithEdges bool
+	// EdgesGeometry geometry.GeometryInformation
+	Ephemeral bool
+
+	BlockType
+
+	Neighbors [6]bool
+}
 
 func getBlockTexture(blockType BlockType) []uint32 {
 	switch blockType {
@@ -51,6 +71,12 @@ func getBlockTexture(blockType BlockType) []uint32 {
 		return []uint32{woodSideTexture, woodSideTexture, woodSideTexture, woodSideTexture, woodSideTexture, woodSideTexture}
 	case BlockLeaves:
 		return []uint32{leavesTexture, leavesTexture, leavesTexture, leavesTexture, leavesTexture, leavesTexture}
+	case BlockStone:
+		return []uint32{stoneTexture, stoneTexture, stoneTexture, stoneTexture, stoneTexture, stoneTexture}
+	case BlockWater:
+		return []uint32{waterTexture, waterTexture, waterTexture, waterTexture, waterTexture, waterTexture}
+	case BlockSand:
+		return []uint32{sandTexture, sandTexture, sandTexture, sandTexture, sandTexture, sandTexture}
 	}
 
 	return []uint32{grassSideTexture, grassSideTexture, grassSideTexture, grassSideTexture, grassTopTexture, dirtTexture}
@@ -75,24 +101,15 @@ func getTexture(blockType BlockType) BlockTexture {
 	return BlockTexture{0.0, 0.0, 0.0}
 }
 
-type Block struct {
-	Position mgl32.Vec4
-	Size     float32
-	Model    mgl32.Mat4
-	// ModelGeometry geometry.GeometryInformation
-	WithEdges bool
-	// EdgesGeometry geometry.GeometryInformation
-	Ephemeral bool
-
-	BlockType
-}
-
 func InitBlock() {
 	dirtTexture = newTexture("dirt_0.png")
 	grassTopTexture = newTexture("grass_0.png")
 	grassSideTexture = newTexture("grass_1.png")
 	woodSideTexture = newTexture("wood_0.png")
 	leavesTexture = newTexture("leaves_0.png")
+	stoneTexture = newTexture("stone_0.png")
+	waterTexture = newTexture("water_0.png")
+	sandTexture = newTexture("sand_0.png")
 }
 
 func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockType) Block {
@@ -161,71 +178,54 @@ func newTexture(file string) uint32 {
 	return texture
 }
 
-func (b Block) Draw2(blocks map[int]map[int]map[int]*Block) {
+func (b Block) CountNeighbors() int {
+	count := 0
+	for _, neighbor := range b.Neighbors {
+		if neighbor {
+			count++
+		}
+	}
+
+	return count
+}
+
+func (b Block) Draw2() {
 
 	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
 
 	blockTextures := getBlockTexture(b.BlockType)
-	applyTextures := []uint32{}
 	north := math2.North(b.Position, b.Size)
 	south := math2.South(b.Position, b.Size)
 	east := math2.East(b.Position, b.Size)
 	west := math2.West(b.Position, b.Size)
 	upper := math2.Upper(b.Position, b.Size)
 	lower := math2.Lower(b.Position, b.Size)
-	faces := []mgl32.Vec4{}
+	faces := []mgl32.Vec4{north, south, east, west, upper, lower}
 	northRotation := math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
 	southRotation := math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
 	eastRotation := math2.Matrix_Identity()
 	westRotation := math2.Matrix_Identity()
 	upperRotation := math2.Matrix_Rotate_X((math.Pi / 180) * 90)
 	lowerRotation := math2.Matrix_Rotate_X((math.Pi / 180) * 90)
-	rotations := []mgl32.Mat4{}
 
-	if blocks[int(b.Position.X()+1)][int(b.Position.Y())][int(b.Position.Z())] == nil {
-		faces = append(faces, north)
-		rotations = append(rotations, northRotation)
-		applyTextures = append(applyTextures, blockTextures[0])
-	}
-	if blocks[int(b.Position.X()-1)][int(b.Position.Y())][int(b.Position.Z())] == nil {
-		faces = append(faces, south)
-		rotations = append(rotations, southRotation)
-		applyTextures = append(applyTextures, blockTextures[1])
-	}
-	if blocks[int(b.Position.X())][int(b.Position.Y())][int(b.Position.Z()+1)] == nil {
-		faces = append(faces, east)
-		rotations = append(rotations, eastRotation)
-		applyTextures = append(applyTextures, blockTextures[2])
-	}
-	if blocks[int(b.Position.X())][int(b.Position.Y())][int(b.Position.Z()-1)] == nil {
-		faces = append(faces, west)
-		rotations = append(rotations, westRotation)
-		applyTextures = append(applyTextures, blockTextures[3])
-	}
-	if blocks[int(b.Position.X())][int(b.Position.Y()+1)][int(b.Position.Z())] == nil {
-		faces = append(faces, upper)
-		rotations = append(rotations, upperRotation)
-		applyTextures = append(applyTextures, blockTextures[4])
-	}
-	if blocks[int(b.Position.X())][int(b.Position.Y()-1)][int(b.Position.Z())] == nil {
-		faces = append(faces, lower)
-		rotations = append(rotations, lowerRotation)
-		applyTextures = append(applyTextures, blockTextures[5])
-	}
+	rotations := []mgl32.Mat4{northRotation, southRotation, eastRotation, westRotation, upperRotation, lowerRotation}
 
+	diff := 0.0
+	if b.BlockType == BlockWater {
+		diff = 0.2
+	}
+	gl.BindVertexArray(geometry.Faces[b.BlockType].VaoID)
 	for index, face := range faces {
-		// gl.ActiveTexture(gl.TEXTURE0)
-		// gl.BindTexture(gl.TEXTURE_2D, dirtTexture)
-
+		if b.Neighbors[index] {
+			continue
+		}
 		if !BlockEdgesOnly {
 			gl.ActiveTexture(gl.TEXTURE0)
-			gl.BindTexture(gl.TEXTURE_2D, applyTextures[index])
-			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
+			gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
 
-			gl.BindVertexArray(geometry.Faces[b.BlockType].VaoID)
+			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
+
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
-
-			// gl.Uniform1i(render_as_black_uniform, 0)
 			gl.DrawElements(
 				uint32(geometry.Faces[b.BlockType].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
 				int32(geometry.Faces[b.BlockType].NumIndices),

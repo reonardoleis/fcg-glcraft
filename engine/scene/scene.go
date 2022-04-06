@@ -67,6 +67,7 @@ func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Play
 }
 
 func (s *Scene) Update(window glfw.Window) {
+
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	gl.UseProgram(shaders.ShaderProgramCrosshair)
@@ -86,7 +87,9 @@ func (s *Scene) Update(window glfw.Window) {
 		game_objects.BlockEdgesOnly = false
 	}
 
-	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)})
+	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
+
+	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer)
 
 	window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 		roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))

@@ -93,7 +93,7 @@ func (c *Camera) Handle() {
 	c.view = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
 
 	nearplane := float32(-0.1)
-	farplane := float32(-30.0)
+	farplane := float32(-60.0)
 
 	fov := float32(math.Pi / 3.0)
 	c.projection = math2.Matrix_Perspective(fov, float32(window.ScreenRatio), nearplane, farplane)

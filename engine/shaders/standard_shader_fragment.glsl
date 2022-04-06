@@ -61,10 +61,10 @@ void main()
     V = 0.5 + position_model.y;
     
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    vec3 Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
+    vec4 Kd0 = texture(TextureImage0, vec2(U,V)).rgba;
 
     
-    color.rgb = Kd0;
+    color.rgb = vec3(Kd0.x, Kd0.y, Kd0.z);
 
     // NOTE: Se você quiser fazer o rendering de objetos transparentes, é
     // necessário:
@@ -78,7 +78,7 @@ void main()
     //    suas distâncias para a câmera (desenhando primeiro objetos
     //    transparentes que estão mais longe da câmera).
     // Alpha default = 1 = 100% opaco = 0% transparente
-    color.a = 1;
+    color.a = Kd0.w;
 
     // Cor final com correção gamma, considerando monitor sRGB.
     // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas

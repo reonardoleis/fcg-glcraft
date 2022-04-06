@@ -61,6 +61,18 @@ type Block struct {
 	Neighbors [6]bool
 }
 
+func GetBlockTypes() []BlockType {
+	return []BlockType{
+		BlockGrass,
+		BlockDirt,
+		BlockWood,
+		BlockLeaves,
+		BlockSand,
+		BlockStone,
+		BlockWater,
+	}
+}
+
 func getBlockTexture(blockType BlockType) []uint32 {
 	switch blockType {
 	case BlockDirt:

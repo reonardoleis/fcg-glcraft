@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // Renders a textured spinning cube using GLFW 3 and OpenGL 4.1 core forward-compatible profile.
-package main // import "github.com/go-gl/example/gl41core-cube"
+package main
 
 import (
 	"fmt"
@@ -73,8 +73,9 @@ func main() {
 
 	geometry.BuildFaceEdges()
 
-	world := world.NewWorld("", mgl32.Vec3{32, 128, 32}, 2300932812397)
+	world := world.NewWorld("", mgl32.Vec3{64, 128, 64}, 2300932812397)
 	world.GenerateWorld()
+	world.InitPopulatedBlocks()
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
@@ -235,18 +236,6 @@ var cubeVertices = []float32{
 	1.0, -1.0, 1.0, 1.0, 1.0,
 	1.0, 1.0, -1.0, 0.0, 0.0,
 	1.0, 1.0, 1.0, 0.0, 1.0,
-}
-
-// Set the working directory to the root of Go package, so that its assets can be accessed.
-func init() {
-	dir, err := importPathToDir("github.com/go-gl/example/gl41core-cube")
-	if err != nil {
-		log.Fatalln("Unable to find Go package in your GOPATH, it's needed to load assets:", err)
-	}
-	err = os.Chdir(dir)
-	if err != nil {
-		log.Panicln("os.Chdir:", err)
-	}
 }
 
 // importPathToDir resolves the absolute path from importPath.

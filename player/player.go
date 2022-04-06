@@ -6,8 +6,10 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/camera"
+	"github.com/reonardoleis/fcg-glcraft/collisions"
+	"github.com/reonardoleis/fcg-glcraft/configs"
+
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
-	"github.com/reonardoleis/fcg-glcraft/game_objects"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/world"
 )
@@ -36,6 +38,8 @@ type Player struct {
 	ClosestEmptySpace         *mgl32.Vec4
 	_mouseLeftDownLastUpdate  bool
 	_mouseRightDownLastUpdate bool
+	Collider                  *collisions.CubeCollider
+	BoundingBox               *collisions.CubeBoundingBox
 }
 
 func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walkingSpeed, runningMultiplier, jumpHeight, jumpSpeed, height float32) Player {
@@ -59,6 +63,8 @@ func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walk
 		ClosestEmptySpace:         &mgl32.Vec4{},
 		_mouseLeftDownLastUpdate:  true,
 		_mouseRightDownLastUpdate: true,
+		Collider:                  collisions.NewCubeCollider(),
+		BoundingBox:               collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth, configs.PlayerHeight),
 	}
 }
 
@@ -68,6 +74,7 @@ func (p Player) IsJumping() bool {
 
 func (p *Player) BeFollowedByCamera(camera *camera.Camera) {
 	p.Camera = camera
+
 }
 
 func (p *Player) SetPosition(newPosition mgl32.Vec4) {
@@ -102,7 +109,6 @@ func (p Player) GetMovementVector() (w, u mgl32.Vec4) {
 func (p *Player) Jump() {
 	p._originalY = p.Position.Y()
 	p._isJumping = true
-	p.IsGrounded = false
 }
 
 func (p *Player) HandleJump() {
@@ -110,6 +116,34 @@ func (p *Player) HandleJump() {
 	if p.Position.Y()-p._originalY >= p.JumpHeight {
 		p._isJumping = false
 	}
+}
+
+func (p *Player) CheckCollisions(futurePosition mgl32.Vec3, blocks world.WorldBlocks) (collidesSides, collidesBelow, collidesAbove bool) {
+	futureBoundingBox := collisions.NewCubeBoundingBox(futurePosition, configs.PlayerWidth, configs.PlayerHeight)
+
+	playerX, playerY, playerZ := p.GetRoundedPosition()
+	for x := playerX - 1; x <= playerX+1; x++ {
+		for y := playerY - 1; y <= playerY+1; y++ {
+			for z := playerZ - 1; z <= playerZ+1; z++ {
+				if blocks[x][y][z] == nil {
+					continue
+				}
+				blockBoundingBox := collisions.NewCubeBoundingBox(blocks[x][y][z].Position.Vec3(), float32(configs.BlockSize), float32(configs.BlockSize))
+				if p.Collider.Collides(*futureBoundingBox, *blockBoundingBox) {
+
+					if x == playerX && z == playerZ && y == playerY-1 {
+						collidesBelow = true
+					} else if x == playerX && z == playerZ && y == playerY+1 {
+						collidesAbove = true
+					} else {
+						collidesSides = true
+					}
+				}
+
+			}
+		}
+	}
+	return
 }
 
 func (p *Player) Update(world *world.World) {
@@ -123,11 +157,9 @@ func (p *Player) Update(world *world.World) {
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyS)) {
 		newPosition = p.Position.Add(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyD)) {
 		newPosition = p.Position.Add(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyA)) {
 		newPosition = p.Position.Add(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
@@ -179,45 +211,67 @@ func (p *Player) Update(world *world.World) {
 		color = mgl32.Vec3{1.0, 0.0, 1.0}
 	}
 
-	if world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil ||
+	/*if (world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil ||
 		world.Blocks[int(newPosition.X())][int(newPosition.Y())-1][int(newPosition.Z())] != nil ||
 		world.Blocks[int(newPosition.X())][int(newPosition.Y())+1][int(newPosition.Z())] != nil ||
 		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil ||
 		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
 		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
-		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil {
+		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil) &&
+		(world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil && world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())].BlockType != game_objects.BlockWater) {
 		newPosition = p.Position
+	}*/
+
+	if !p._isJumping {
+		newPosition = newPosition.Sub(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
 	}
-	p.Position = newPosition
+
+	collided, collidedBelow, collidesAbove := p.CheckCollisions(newPosition.Vec3(), world.Blocks)
+
+	if collidedBelow {
+		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
+		collided, _, _ = p.CheckCollisions(newPosition.Vec3(), world.Blocks)
+	}
+
+	if !collided {
+		p.Position = newPosition
+	}
+
+	p.BoundingBox.UpdateBounds(p.Position.Vec3())
+
+	if collidesAbove {
+		p._isJumping = false
+	}
 
 	if p.IsJumping() {
 		p.HandleJump()
 	}
-	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && p.IsGrounded {
+	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
 		p.Jump()
 	}
 
 	p.HandleWorldLimits(world)
 
-	p.Camera.Follow(p.Position)
+	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.BlockSize), 0.0, 0.0}))
+	p.Camera.Update()
 
 	p.HandleBlockInteractions(world)
 }
 
 func (p *Player) HandleBlockInteractions(world *world.World) {
-	lookingAtPoint := p.Position.Add(p.Camera.ViewVector)
-	lookingDirection := lookingAtPoint.Sub(p.Position)
+	lookingAtPoint := p.Position.Add(mgl32.Vec4{0.0, float32(configs.BlockSize), 0.0, 1.0}).Add(p.Camera.ViewVector)
+	lookingDirection := lookingAtPoint.Sub(p.Position.Add(mgl32.Vec4{0.0, float32(configs.BlockSize), 0.0, 1.0}))
 
 	px, py, pz := p.GetRoundedPosition()
 	shouldBreak := false
 
 	// bounding box
-	for s := 0.0; s < 5.0; s += 1 {
+	for s := 0.0; s < 5.0; s += 0.5 {
 		if shouldBreak {
 			break
 		}
 		ray := lookingDirection.Mul(float32(s))
-		ray = mgl32.Vec4{ray.X() + p.Position.X(), ray.Y() + p.Position.Y(), ray.Z() + p.Position.Z(), 0.0}
+		ray = mgl32.Vec4{ray.X() + p.Position.X(), ray.Y() + p.Position.Y() + float32(configs.BlockSize), ray.Z() + p.Position.Z(), 0.0}
 		for x := px - 2; x <= px+2; x++ {
 			if shouldBreak {
 				break
@@ -294,15 +348,4 @@ func (p Player) GetFlooredPosition() (int, int, int) {
 	roundedZ := int(math.Floor(float64(p.Position.Z())))
 
 	return roundedX, roundedY, roundedZ
-}
-
-func (p *Player) Fall(blockBelow *game_objects.Block) {
-	if blockBelow != nil && float64(p.Position.Y()-p.Height) <= float64(blockBelow.Position.Y()+(blockBelow.Size/2)) {
-		p.IsGrounded = true
-		// player.Position = (mgl32.Vec4{player.Position.X(), blockBelow.Position.Y() + (blockBelow.Size / 2) + float32(playerHeight), player.Position.Z(), 1.0})
-	} else if !p.IsJumping() || blockBelow == nil {
-		p.IsGrounded = false
-		p.SetPosition(mgl32.Vec4{p.Position.X(), p.Position.Y() - math2.GravityAccel*float32(math2.DeltaTime), p.Position.Z(), 1.0})
-	}
-
 }

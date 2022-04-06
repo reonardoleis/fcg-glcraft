@@ -75,7 +75,7 @@ func (s *Scene) Update(window glfw.Window) {
 	geometry.DrawCrosshair()
 
 	gl.UseProgram(shaders.ShaderProgramDefault)
-	s.MainCamera.Update()
+
 	s.Player.Update(s.World)
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()
@@ -93,10 +93,6 @@ func (s *Scene) Update(window glfw.Window) {
 
 	window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 		roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))
-
-	blockBelow := s.World.FindHighestBlock(roundedPlayerX, roundedPlayerZ)
-
-	s.Player.Fall(blockBelow)
 
 	s.ControlHandler.FinishMousePositionChanged()
 	window.SwapBuffers()

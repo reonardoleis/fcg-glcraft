@@ -41,6 +41,7 @@ type Player struct {
 	_mouseRightDownLastUpdate bool
 	Collider                  *collisions.CubeCollider
 	BoundingBox               *collisions.CubeBoundingBox
+	BoundingBox2              *collisions.CubeBoundingBox
 }
 
 func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walkingSpeed, runningMultiplier, jumpHeight, jumpSpeed, height float32) Player {
@@ -65,7 +66,8 @@ func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walk
 		_mouseLeftDownLastUpdate:  true,
 		_mouseRightDownLastUpdate: true,
 		Collider:                  collisions.NewCubeCollider(),
-		BoundingBox:               collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth, configs.PlayerHeight),
+		BoundingBox:               collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth*0.5, configs.PlayerHeight*0.5),
+		BoundingBox2:              collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth, configs.PlayerHeight),
 	}
 }
 
@@ -120,9 +122,11 @@ func (p *Player) HandleJump() {
 }
 
 func (p *Player) CheckCollisions(futurePosition mgl32.Vec3, blocks world.WorldBlocks) (collidesSides, collidesBelow, collidesAbove bool) {
-	futureBoundingBox := collisions.NewCubeBoundingBox(futurePosition, configs.PlayerWidth, configs.PlayerHeight)
+	futureBoundingBox := collisions.NewCubeBoundingBox(futurePosition, configs.PlayerWidth*0.5, configs.PlayerHeight*0.5)
+	futureBoundingBox2 := collisions.NewCubeBoundingBox(futurePosition, configs.PlayerWidth, configs.PlayerHeight)
 
 	playerX, playerY, playerZ := p.GetRoundedPosition()
+	fmt.Println(playerX, playerY, playerZ)
 	for x := playerX - 1; x <= playerX+1; x++ {
 		for y := playerY - 1; y <= playerY+1; y++ {
 			for z := playerZ - 1; z <= playerZ+1; z++ {
@@ -130,15 +134,18 @@ func (p *Player) CheckCollisions(futurePosition mgl32.Vec3, blocks world.WorldBl
 					continue
 				}
 				blockBoundingBox := collisions.NewCubeBoundingBox(blocks[x][y][z].Position.Vec3(), float32(configs.BlockSize), float32(configs.BlockSize))
+				if x == playerX && z == playerZ && y == playerY-1 && p.Collider.Collides(*futureBoundingBox2, *blockBoundingBox) {
+					collidesBelow = true
+					continue
+				}
 				if p.Collider.Collides(*futureBoundingBox, *blockBoundingBox) {
 					blocks[x][y][z].WithEdges = true
-					if x == playerX && z == playerZ && y == playerY-1 {
-						collidesBelow = true
-					} else if x == playerX && z == playerZ && y == playerY+1 {
+
+					if x == playerX && z == playerZ && y == playerY+1 {
 						collidesAbove = true
 					} else {
 						collidesSides = true
-						fmt.Println("Bloco: ", x, y, z, "Player: ", playerX, playerY, playerZ)
+						//fmt.Println("Bloco: ", x, y, z, "Player: ", playerX, playerY, playerZ)
 
 					}
 				}
@@ -235,9 +242,9 @@ func (p *Player) Update(world *world.World) {
 		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
 		collided, _, _ = p.CheckCollisions(newPosition.Vec3(), world.Blocks)
 	}
-
 	if !collided {
 		p.Position = newPosition
+
 	}
 
 	p.BoundingBox.UpdateBounds(p.Position.Vec3())

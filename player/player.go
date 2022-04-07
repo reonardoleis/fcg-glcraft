@@ -9,6 +9,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/collisions"
 	"github.com/reonardoleis/fcg-glcraft/configs"
+	"github.com/reonardoleis/fcg-glcraft/game_objects"
 
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
@@ -159,6 +160,44 @@ func (p *Player) CheckCollisions(futurePosition mgl32.Vec3, blocks world.WorldBl
 
 func (p *Player) Update(world *world.World) {
 	p.HandleLookDirection()
+	Ax := 5*math.Cos(-p.PlayerTheta-math.Pi/4) + float64(p.Position.X())
+	Az := 5*math.Sin(p.PlayerTheta+math.Pi/4) + float64(p.Position.Z())
+	Bx := 5*math.Cos(-p.PlayerTheta-math.Pi*3/4) + float64(p.Position.X())
+	Bz := 5*math.Sin(p.PlayerTheta+math.Pi*3/4) + float64(p.Position.Z())
+	Cx := 5*math.Cos(-p.PlayerTheta-math.Pi*5/4) + float64(p.Position.X())
+	Cz := 5*math.Sin(p.PlayerTheta+math.Pi*5/4) + float64(p.Position.Z())
+	Dx := 5*math.Cos(-p.PlayerTheta-math.Pi*7/4) + float64(p.Position.X())
+	Dz := 5*math.Sin(p.PlayerTheta+math.Pi*7/4) + float64(p.Position.Z())
+	AxY := 5*math.Cos(-p.PlayerTheta-math.Pi/4) + float64(p.Position.X())
+	AzY := 5*math.Sin(p.PlayerTheta+math.Pi/4) + float64(p.Position.Z())
+	BxY := 5*math.Cos(-p.PlayerTheta-math.Pi*3/4) + float64(p.Position.X())
+	BzY := 5*math.Sin(p.PlayerTheta+math.Pi*3/4) + float64(p.Position.Z())
+	CxY := 5*math.Cos(-p.PlayerTheta-math.Pi*5/4) + float64(p.Position.X())
+	CzY := 5*math.Sin(p.PlayerTheta+math.Pi*5/4) + float64(p.Position.Z())
+	DxY := 5*math.Cos(-p.PlayerTheta-math.Pi*7/4) + float64(p.Position.X())
+	DzY := 5*math.Sin(p.PlayerTheta+math.Pi*7/4) + float64(p.Position.Z())
+	cube := game_objects.NewBlock(float32(Ax), p.Position.Y(), float32(Az), 1, false, false, game_objects.BlockDirt)
+	cube2 := game_objects.NewBlock(float32(Bx), p.Position.Y(), float32(Bz), 1, false, false, game_objects.BlockDirt)
+	cube3 := game_objects.NewBlock(float32(Cx), p.Position.Y(), float32(Cz), 1, false, false, game_objects.BlockDirt)
+	cube4 := game_objects.NewBlock(float32(Dx), p.Position.Y(), float32(Dz), 1, false, false, game_objects.BlockDirt)
+	cube5 := game_objects.NewBlock(float32(AxY), p.Position.Y()+5, float32(AzY), 1, false, false, game_objects.BlockDirt)
+	cube6 := game_objects.NewBlock(float32(BxY), p.Position.Y()+5, float32(BzY), 1, false, false, game_objects.BlockDirt)
+	cube7 := game_objects.NewBlock(float32(CxY), p.Position.Y()+5, float32(CzY), 1, false, false, game_objects.BlockDirt)
+	cube8 := game_objects.NewBlock(float32(DxY), p.Position.Y()+5, float32(DzY), 1, false, false, game_objects.BlockDirt)
+	cube.Draw2()
+	cube2.Draw2()
+	cube3.Draw2()
+	cube4.Draw2()
+	cube5.Draw2()
+	cube6.Draw2()
+	cube7.Draw2()
+	cube8.Draw2()
+	fmt.Println(p.PlayerTheta)
+	//fmt.Println("A: ", Ax, Az)
+	//fmt.Println("B: ", Bx, Bz)
+	//fmt.Println("C: ", Cx, Az)
+	//fmt.Println("D: ", Dx, Dz)
+
 	w, u := p.GetMovementVector()
 
 	newPosition := p.Position

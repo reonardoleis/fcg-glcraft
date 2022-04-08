@@ -12,8 +12,8 @@ type CubeBoundingBox struct {
 }
 
 func NewCubeBoundingBox(position mgl32.Vec3, width, height float32) *CubeBoundingBox {
-	maxes := mgl32.Vec3{position.X() + width/2, position.Y() + height/2, position.Z() + width/2}
-	mins := mgl32.Vec3{position.X() - width/2, position.Y() - height/2, position.Z() - width/2}
+	maxes := mgl32.Vec3{position.X() + (width / 2), position.Y() + (height / 2), position.Z() + (width / 2)}
+	mins := mgl32.Vec3{position.X() - (width / 2), position.Y() - (height / 2), position.Z() - (width / 2)}
 	return &CubeBoundingBox{
 		Maxes:  maxes,
 		Mins:   mins,

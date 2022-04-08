@@ -73,7 +73,7 @@ func main() {
 
 	geometry.BuildFaceEdges()
 
-	world := world.NewWorld("", mgl32.Vec3{64, 128, 64}, 2300932812397)
+	world := world.NewWorld("", mgl32.Vec3{32, 16, 32}, 2300932812397)
 	world.GenerateWorld()
 	world.InitPopulatedBlocks()
 

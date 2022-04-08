@@ -60,7 +60,7 @@ func (w World) FindHighestBlock(wx, wz int) *game_objects.Block {
 }
 
 func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, color mgl32.Vec3) {
-	// fmt.Println(position)
+	// // fmt.Println(position)
 	x, y, z := position.Elem()
 	if w.Blocks[int(x)] == nil {
 		w.Blocks[int(x)] = make(map[int]map[int]*game_objects.Block)
@@ -114,7 +114,7 @@ func (w World) FindPlacementPosition(hitAt mgl32.Vec4, nearFrom mgl32.Vec4, boun
 	block4 := mgl32.Vec4{hitAt.X() - 1, hitAt.Y(), hitAt.Z(), 1.0} // south
 	block5 := mgl32.Vec4{hitAt.X(), hitAt.Y(), hitAt.Z() + 1, 1.0} // east
 	block6 := mgl32.Vec4{hitAt.X(), hitAt.Y(), hitAt.Z() - 1, 1.0} // west
-	// fmt.Println(hitAt, nearFrom)
+	// // fmt.Println(hitAt, nearFrom)
 	bb := []float32{boundingBoxHighests.X() - nearFrom.X(), boundingBoxHighests.Y() - nearFrom.Y(), boundingBoxHighests.Z() - nearFrom.Z(),
 		nearFrom.X() - boundingBoxLowests.X(), nearFrom.Y() - boundingBoxLowests.Y(), nearFrom.Z() - boundingBoxLowests.Z()}
 
@@ -176,24 +176,25 @@ func (w *World) GenerateWorld() {
 
 	}
 
+	w.Blocks = generatedWorld
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
 
-				if y < 50 && generatedWorld[x][y][z] == nil {
+				if y < 62 && w.Blocks[x][y][z] == nil {
 
 					index := y
 
 					for {
-						if generatedWorld[x][index][z] == nil {
-							if len(generatedWorld[x][index]) == 0 {
-								generatedWorld[x][index] = make(map[int]*game_objects.Block)
+						if w.Blocks[x][index][z] == nil {
+							if len(w.Blocks[x][index]) == 0 {
+								w.Blocks[x][index] = make(map[int]*game_objects.Block)
 							}
 
 							newCube := game_objects.NewBlock(float32(x), float32(index), float32(z), 1, true, false, game_objects.BlockWater)
 							newCube.WithEdges = false
 
-							generatedWorld[x][index][z] = &newCube
+							w.Blocks[x][index][z] = &newCube
 							index--
 							if index <= int(w.Size.Y()) {
 								break
@@ -215,26 +216,61 @@ func (w *World) GenerateWorld() {
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
-				if generatedWorld[x][y][z] == nil {
+				if w.Blocks[x][y][z] == nil {
 					continue
 				}
 
-				if generatedWorld[x][y+1][z] == nil && generatedWorld[x][y][z].BlockType != game_objects.BlockWater {
-					generatedWorld[x][y][z].BlockType = game_objects.BlockGrass
-					continue
+				if w.Blocks[x][y+1][z] == nil && w.Blocks[x][y][z].BlockType != game_objects.BlockWater && w.Blocks[x][y][z].BlockType != game_objects.BlockSand {
+					w.Blocks[x][y][z].BlockType = game_objects.BlockGrass
+
 				}
 
-				if generatedWorld[x][y][z].BlockType == game_objects.BlockWater {
-					continue
+				if w.Blocks[x][y][z].BlockType == game_objects.BlockSand {
+					w.Blocks[x][y][z].BlockType = game_objects.BlockSand
+					for sx := -1; sx <= 1; sx++ {
+						for sz := -1; sz <= 1; sz++ {
+							if x+sx == x && z+sz == z {
+								continue
+							}
+							if w.Blocks[x+sx][y+1][z+sz] != nil {
+								continue
+							}
+							if w.Blocks[x+sx][y][z+sz] != nil && w.Blocks[x+sx][y][z+sz].BlockType == game_objects.BlockWater {
+								continue
+							}
+							w.PopulateIfEmpty(mgl32.Vec3{float32(x + sx), float32(y), float32(z + sz)})
+							w.Blocks[x+sx][y][z+sz].BlockType = game_objects.BlockSand
+
+						}
+					}
 				}
 
-				if generatedWorld[x+1][y][z] != nil && generatedWorld[x+1][y][z].BlockType == game_objects.BlockWater ||
-					generatedWorld[x-1][y][z] != nil && generatedWorld[x-1][y][z].BlockType == game_objects.BlockWater ||
-					generatedWorld[x][y+1][z] != nil && generatedWorld[x][y+1][z].BlockType == game_objects.BlockWater ||
-					generatedWorld[x][y-1][z] != nil && generatedWorld[x][y-1][z].BlockType == game_objects.BlockWater ||
-					generatedWorld[x][y][z+1] != nil && generatedWorld[x][y][z+1].BlockType == game_objects.BlockWater ||
-					generatedWorld[x][y][z-1] != nil && generatedWorld[x][y][z-1].BlockType == game_objects.BlockWater {
-					generatedWorld[x][y][z].BlockType = game_objects.BlockSand
+				if w.Blocks[x+1][y][z] != nil && w.Blocks[x+1][y][z].BlockType == game_objects.BlockWater ||
+					w.Blocks[x-1][y][z] != nil && w.Blocks[x-1][y][z].BlockType == game_objects.BlockWater ||
+					w.Blocks[x][y+1][z] != nil && w.Blocks[x][y+1][z].BlockType == game_objects.BlockWater ||
+					w.Blocks[x][y-1][z] != nil && w.Blocks[x][y-1][z].BlockType == game_objects.BlockWater ||
+					w.Blocks[x][y][z+1] != nil && w.Blocks[x][y][z+1].BlockType == game_objects.BlockWater ||
+					w.Blocks[x][y][z-1] != nil && w.Blocks[x][y][z-1].BlockType == game_objects.BlockWater {
+					if w.Blocks[x][y][z].BlockType == game_objects.BlockWater {
+						continue
+					}
+					w.Blocks[x][y][z].BlockType = game_objects.BlockSand
+					for sx := -1; sx <= 1; sx++ {
+						for sz := -1; sz <= 1; sz++ {
+							if x+sx == x && z+sz == z {
+								continue
+							}
+							if w.Blocks[x+sx][y+1][z+sz] != nil {
+								continue
+							}
+							if w.Blocks[x+sx][y][z+sz] != nil && w.Blocks[x+sx][y][z+sz].BlockType == game_objects.BlockWater {
+								continue
+							}
+							w.PopulateIfEmpty(mgl32.Vec3{float32(x + sx), float32(y), float32(z + sz)})
+							w.Blocks[x+sx][y][z+sz].BlockType = game_objects.BlockSand
+
+						}
+					}
 					continue
 				}
 
@@ -244,7 +280,35 @@ func (w *World) GenerateWorld() {
 
 	}
 
-	w.Blocks = generatedWorld
+	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
+		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
+			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
+				if w.Blocks[x][y][z] == nil {
+					continue
+				}
+
+				shouldAddTree := math2.RandInt(0, 1000) <= 1
+				if w.Blocks[x][y+1][z] == nil && (w.Blocks[x][y][z].BlockType == game_objects.BlockGrass || w.Blocks[x][y][z].BlockType == game_objects.BlockDirt) {
+					if shouldAddTree {
+						w.PlaceTree(mgl32.Vec3{float32(x), float32(y) + 1, float32(z)})
+					}
+					continue
+				}
+
+				if y <= 65 && w.Blocks[x][y][z].BlockType != game_objects.BlockWater {
+					caveNoise := w.GlobalNoise.Noise2D(float64(x)/float64(w.Size.X()), float64(y)/float64(w.Size.Y()))
+					if caveNoise >= 0.04 {
+						// fmt.Println("removendo blocok")
+						// w.Blocks[x][y][z] = nil
+					}
+				}
+
+			}
+
+		}
+
+	}
+
 	w.SetInitialNeighbors()
 	w.ShouldUpdatePopulatedBlocks = true
 }
@@ -342,6 +406,50 @@ func (w *World) InitPopulatedBlocks() {
 	}
 }
 
+func (w *World) PopulateIfEmpty(position mgl32.Vec3) {
+	if len(w.Blocks[int(position.X())]) == 0 {
+		w.Blocks[int(position.X())] = make(map[int]map[int]*game_objects.Block)
+	}
+	if len(w.Blocks[int(position.X())][int(position.Y())]) == 0 {
+		w.Blocks[int(position.X())][int(position.Y())] = make(map[int]*game_objects.Block)
+	}
+	if w.Blocks[int(position.X())][int(position.Y())][int(position.Z())] == nil {
+		w.Blocks[int(position.X())][int(position.Y())][int(position.Z())] = &game_objects.Block{}
+	}
+}
+
+func (w *World) PlaceTree(position mgl32.Vec3) {
+	treeHeight := math2.RandInt(2, 4)
+
+	for i := 0; i <= treeHeight; i++ {
+		blockPosition := mgl32.Vec3{position.X(), position.Y() + float32(i), position.Z()}
+		w.PopulateIfEmpty(blockPosition)
+		treeBlock := game_objects.NewBlock(position.X(), position.Y()+float32(i), position.Z(), float32(configs.BlockSize), false, false, game_objects.BlockWood)
+		w.Blocks[int(position.X())][int(position.Y())+i][int(position.Z())] = &treeBlock
+	}
+
+	treeMax := position.Y() + float32(treeHeight)
+
+	for x := -1 + int(position.X()); x <= int(position.X())+1; x++ {
+		for y := int(treeMax); y <= int(treeMax)+1; y++ {
+			for z := -1 + int(position.Z()); z <= int(position.Z())+1; z++ {
+				if float32(x) == position.X() && float32(z) == position.Z() {
+					continue
+				}
+				blockPosition := mgl32.Vec3{float32(x), float32(y), float32(z)}
+				w.PopulateIfEmpty(blockPosition)
+				treeBlock := game_objects.NewBlock(float32(x), float32(y), float32(z), float32(configs.BlockSize), false, false, game_objects.BlockLeaves)
+				w.Blocks[x][y][z] = &treeBlock
+			}
+		}
+	}
+
+	blockPosition := mgl32.Vec3{position.X(), treeMax + 2, position.Z()}
+	w.PopulateIfEmpty(blockPosition)
+	treeBlock := game_objects.NewBlock(blockPosition.X(), blockPosition.Y(), blockPosition.Z(), float32(configs.BlockSize), false, false, game_objects.BlockLeaves)
+	w.Blocks[int(blockPosition.X())][int(blockPosition.Y())][int(blockPosition.Z())] = &treeBlock
+}
+
 func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64) {
 	blockTypes := game_objects.GetBlockTypes()
 	for _, blockType := range blockTypes {
@@ -378,7 +486,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	fromY, toY := math.Max(-float64(w.Size.Y()), float64(roundedPlayerY)-maxDist), math.Min(float64(w.Size.Y()), float64(roundedPlayerY)+maxDist)
 	fromZ, toZ := math.Max(-float64(w.Size.Z()), float64(roundedPlayerZ)-maxDist), math.Min(float64(w.Size.Z()), float64(roundedPlayerZ)+maxDist)
 
-	// fmt.Println(len(w.PopulatedBlocks))
+	// // fmt.Println(len(w.PopulatedBlocks))
 
 	sumX := frontOfPlayer.X() - backOfPlayer.X()
 	sumZ := frontOfPlayer.Z() - backOfPlayer.Z()
@@ -408,7 +516,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 
 	}
 
-	// fmt.Println(playerBehind)
+	// // fmt.Println(playerBehind)
 
 	w.Tick++
 	if w.Tick >= configs.TickRate {

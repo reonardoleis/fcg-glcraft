@@ -9,7 +9,7 @@ func NewCubeCollider() *CubeCollider {
 }
 
 func (cc CubeCollider) Collides(a, b CubeBoundingBox, av, bv [8]mgl32.Vec3) bool {
-	//fmt.Println(a, b)
+	//// fmt.Println(a, b)
 	if av[0].X() >= b.Mins.X() && av[0].X() <= b.Maxes.X() && av[0].Y() >= b.Mins.Y() && av[0].Y() <= b.Maxes.Y() && av[0].Z() >= b.Mins.Z() && av[0].Z() <= b.Maxes.Z() ||
 		av[1].X() >= b.Mins.X() && av[1].X() <= b.Maxes.X() && av[1].Y() >= b.Mins.Y() && av[1].Y() <= b.Maxes.Y() && av[1].Z() >= b.Mins.Z() && av[1].Z() <= b.Maxes.Z() ||
 		av[2].X() >= b.Mins.X() && av[2].X() <= b.Maxes.X() && av[2].Y() >= b.Mins.Y() && av[2].Y() <= b.Maxes.Y() && av[2].Z() >= b.Mins.Z() && av[2].Z() <= b.Maxes.Z() ||

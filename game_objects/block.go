@@ -145,6 +145,32 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 	}
 }
 
+func (b Block) GetFutureVertices() [8]mgl32.Vec3 {
+	/*
+		x - size/2, y + size/2, z + size/2, 1.0, // posição do vértice 0
+		x - size/2, y - size/2, z + size/2, 1.0, // posição do vértice 1
+		x + size/2, y - size/2, z + size/2, 1.0, // posição do vértice 2
+		x + size/2, y + size/2, z + size/2, 1.0, // posição do vértice 3
+		x - size/2, y + size/2, z - size/2, 1.0, // posição do vértice 4
+		x - size/2, y - size/2, z - size/2, 1.0, // posição do vértice 5
+		x + size/2, y - size/2, z - size/2, 1.0, // posição do vértice 6
+		x + size/2, y + size/2, z - size/2, 1.0, // posição do vértice 7
+	*/
+
+	var vector [8]mgl32.Vec3
+
+	vector[0] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() + b.Size/2}
+	vector[1] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() + b.Size/2}
+	vector[2] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() + b.Size/2}
+	vector[3] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() + b.Size/2}
+	vector[4] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() - b.Size/2}
+	vector[5] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() - b.Size/2}
+	vector[6] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() - b.Size/2}
+	vector[7] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() - b.Size/2}
+
+	return vector
+}
+
 func (c *Block) Translate(x, y, z float32) {
 	c.Model = math2.Matrix_Identity().Mul4(math2.Matrix_Translate(x, y, z))
 }
@@ -178,6 +204,7 @@ func newTexture(file string) uint32 {
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
+
 		gl.RGBA,
 		int32(rgba.Rect.Size().X),
 		int32(rgba.Rect.Size().Y),

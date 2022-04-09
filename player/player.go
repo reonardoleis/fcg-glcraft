@@ -161,29 +161,18 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 				}
 
 				if p.Collider.Collides(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
-					if y == roundedNewPositionY {
-						fmt.Println("Colidindo...+0")
-						fmt.Println(x, y, z)
-						fmt.Println("Maximos: ", blockBoundingBox.Maxes, " Minimos: ", blockBoundingBox.Mins)
-						fmt.Println("Maximos: ", futureBoundingBox.Maxes, " Minimos: ", futureBoundingBox.Mins)
-					}
-					blocks[x][y][z].Colliding = true
-					blocks[x][y][z].WithEdges = true
-					if y == roundedNewPositionY+1 {
-						fmt.Println("Colidindo...+1")
-						fmt.Println(x, y, z)
-						fmt.Println("Maximos: ", blockBoundingBox.Maxes, " Minimos: ", blockBoundingBox.Mins)
-						fmt.Println("Maximos: ", futureBoundingBox.Maxes, " Minimos: ", futureBoundingBox.Mins)
-					}
 
+					//blocks[x][y][z].Colliding = true
+					//blocks[x][y][z].WithEdges = true
+					fmt.Println("Coldindo...")
 					if y == roundedNewPositionY+1 {
-						fmt.Println("Colidindo acima...")
+
 						collidesAbove = true
 						collidesSides = true
 						continue
 					} else {
 						collidesSides = true
-						fmt.Println("Colidindo dos lados...")
+
 						continue
 
 						//fmt.Println("Bloco: ", x, y, z, "Player: ", roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ)
@@ -201,153 +190,214 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 
 func (p *Player) Update(world *world.World) {
 	p.HandleLookDirection()
-	//fmt.Println("Player Y: ", p.Position.Y())
-	/*
-		Ax := 5*math.Cos(p.PlayerTheta-math.Pi/4) + float64(p.Position.X())
-		Az := 5*math.Sin(-p.PlayerTheta+math.Pi/4) + float64(p.Position.Z())
-		Bx := 5*math.Cos(p.PlayerTheta-math.Pi*3/4) + float64(p.Position.X())
-		Bz := 5*math.Sin(-p.PlayerTheta+math.Pi*3/4) + float64(p.Position.Z())
-		Cx := 5*math.Cos(p.PlayerTheta-math.Pi*5/4) + float64(p.Position.X())
-		Cz := 5*math.Sin(-p.PlayerTheta+math.Pi*5/4) + float64(p.Position.Z())
-		Dx := 5*math.Cos(p.PlayerTheta-math.Pi*7/4) + float64(p.Position.X())
-		Dz := 5*math.Sin(-p.PlayerTheta+math.Pi*7/4) + float64(p.Position.Z())
-		AxY := 5*math.Cos(p.PlayerTheta-math.Pi/4) + float64(p.Position.X())
-		AzY := 5*math.Sin(-p.PlayerTheta+math.Pi/4) + float64(p.Position.Z())
-		BxY := 5*math.Cos(p.PlayerTheta-math.Pi*3/4) + float64(p.Position.X())
-		BzY := 5*math.Sin(-p.PlayerTheta+math.Pi*3/4) + float64(p.Position.Z())
-		CxY := 5*math.Cos(p.PlayerTheta-math.Pi*5/4) + float64(p.Position.X())
-		CzY := 5*math.Sin(-p.PlayerTheta+math.Pi*5/4) + float64(p.Position.Z())
-		DxY := 5*math.Cos(p.PlayerTheta-math.Pi*7/4) + float64(p.Position.X())
-		DzY := 5*math.Sin(-p.PlayerTheta+math.Pi*7/4) + float64(p.Position.Z())
-		cube := game_objects.NewBlock(float32(Ax), p.Position.Y(), float32(Az), 1, false, false, game_objects.BlockDirt)
-		cube2 := game_objects.NewBlock(float32(Bx), p.Position.Y(), float32(Bz), 1, false, false, game_objects.BlockGrass)
-		cube3 := game_objects.NewBlock(float32(Cx), p.Position.Y(), float32(Cz), 1, false, false, game_objects.BlockWater)
-		cube4 := game_objects.NewBlock(float32(Dx), p.Position.Y(), float32(Dz), 1, false, false, game_objects.BlockWood)
-		cube5 := game_objects.NewBlock(float32(AxY), p.Position.Y(), float32(AzY), 1, false, false, game_objects.BlockDirt)
-		cube6 := game_objects.NewBlock(float32(BxY), p.Position.Y(), float32(BzY), 1, false, false, game_objects.BlockGrass)
-		cube7 := game_objects.NewBlock(float32(CxY), p.Position.Y(), float32(CzY), 1, false, false, game_objects.BlockWater)
-		cube8 := game_objects.NewBlock(float32(DxY), p.Position.Y(), float32(DzY), 1, false, false, game_objects.BlockWood)
-		minx := math.Min(Ax, math.Min(Bx, math.Min(Cx, Dx)))
-		minz := math.Min(Az,math.Min(Bz,math.Min(Cz,Dz)))
-		maxx := math.Max(Ax,math.Max(Bx,math.Max(Cx,Dx)))
-		maxz := math.Max(Az,math.Max(Bz,math.Max(Cz,Dz)))
-		miny := p.Position.Y()-1.0
-		maxy := p.Position.Y()+1.0
-		bb := collisions.CubeBoundingBox{
-			Maxes: mgl32.Vec3{float32(minx),miny,float32(minz)},
-			Mins: mgl32.Vec3{float32(maxx),maxy,float32(maxz)},
-		}
-
-		cube.Draw2()
-		cube2.Draw2()
-		cube3.Draw2()
-		cube4.Draw2()
-		cube5.Draw2()
-		cube6.Draw2()
-		cube7.Draw2()
-		cube8.Draw2()
-	*/
-	//fmt.Println(p.PlayerTheta)
-	//fmt.Println("A: ", Ax, Az)
-	//fmt.Println("B: ", Bx, Bz)
-	//fmt.Println("C: ", Cx, Az)
-	//fmt.Println("D: ", Dx, Dz)
 
 	w, u := p.GetMovementVector()
 
 	newPosition := p.Position
+
+	if !p._isJumping {
+		//fmt.Println("Caindo....")
+		newPosition = newPosition.Sub(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
+
+	}
+
+	bb := p.UpdateBoundingBox(newPosition)
+
+	roundedNewPositionX := int(math.Round(float64(newPosition.X())))
+	roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
+	roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
+
+	_, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
 	//wneg := w.Mul(-1)
 	if p.ControlHandler.IsDown(int(glfw.KeyW)) {
-		newPosition = p.Position.Add(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-		//fmt.Println(wneg.X()+p.Position.X(), wneg.X()+p.Position.Z())
-		//fmt.Println(p.Position.X()+1, p.Position.Z()+1, p.Position.X()-1, p.Position.Z()-1)
-		/*
-			if wneg.X()+p.Position.X() >= p.Position.X() && wneg.Z()+p.Position.Z() >= p.Position.Z() {
+		newPosition = newPosition.Add(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
 
-				if world.Blocks[int(p.Position.X())+1][int(p.Position.Y())][int(p.Position.Z())] != nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())+1] != nil {
-					//fmt.Println(wneg)
-					//fmt.Println(p.Position)
-					//fmt.Println("Primeiro if... #1")
+		bb = p.UpdateBoundingBox(newPosition)
 
-				} else if world.Blocks[int(p.Position.X())+1][int(p.Position.Y())][int(p.Position.Z())] == nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())+1] != nil {
-					//fmt.Println("Segundo if... #1")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, 0.0, 0.0})
-				} else {
-					//fmt.Println("Terceiro if... #1")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, wneg.Z(), 0.0})
+		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+		if collided {
+			newPosition = newPosition.Sub(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+			newPosition = newPosition.Add(mgl32.Vec4{w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+			bb = p.UpdateBoundingBox(newPosition)
+
+			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+			if collided {
+				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+
+				bb = p.UpdateBoundingBox(newPosition)
+
+				roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+				if collided {
+					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
 				}
-			} else if wneg.X()+p.Position.X() >= p.Position.X() && wneg.Z()+p.Position.Z() <= p.Position.Z() {
-
-				if world.Blocks[int(p.Position.X())+1][int(p.Position.Y())][int(p.Position.Z())] != nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())-1] != nil {
-					//fmt.Println(wneg)
-					//fmt.Println(p.Position)
-					//fmt.Println("Primeiro if... #2")
-
-				} else if world.Blocks[int(p.Position.X())+1][int(p.Position.Y())][int(p.Position.Z())] == nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())-1] != nil {
-					//fmt.Println("Segundo if...#2")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, 0.0, 0.0})
-				} else {
-					//fmt.Println("Terceiro if...#2")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, wneg.Z(), 0.0})
-				}
-			} else if wneg.X()+p.Position.X() <= p.Position.X() && wneg.Z()+p.Position.Z() <= p.Position.Z() {
-				if world.Blocks[int(p.Position.X())-1][int(p.Position.Y())][int(p.Position.Z())] != nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())-1] != nil {
-					//fmt.Println(wneg)
-					//fmt.Println(p.Position)
-					//fmt.Println("Primeiro if...#3")
-
-				} else if world.Blocks[int(p.Position.X())-1][int(p.Position.Y())][int(p.Position.Z())] == nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())-1] != nil {
-					//fmt.Println("Segundo if...#3")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, 0.0, 0.0})
-				} else {
-					//fmt.Println("Terceiro if...#3")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, wneg.Z(), 0.0})
-				}
-			} else if wneg.X()+p.Position.X() <= p.Position.X() && wneg.Z()+p.Position.Z() >= p.Position.Z() {
-				if world.Blocks[int(p.Position.X())-1][int(p.Position.Y())][int(p.Position.Z())] != nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())+1] != nil {
-					//fmt.Println(wneg)
-					//fmt.Println(p.Position)
-					//fmt.Println("Primeiro if...#4")
-				} else if world.Blocks[int(p.Position.X())-1][int(p.Position.Y())][int(p.Position.Z())] == nil &&
-					world.Blocks[int(p.Position.X())][int(p.Position.Y())][int(p.Position.Z())+1] != nil {
-					//fmt.Println("Segundo if...#4")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, 0.0, 0.0})
-				} else {
-					//fmt.Println("Terceiro if...#4")
-					wneg = wneg.Mul(p.WalkingSpeed * float32(math2.DeltaTime))
-					newPosition = p.Position.Add(mgl32.Vec4{wneg.X(), 0.0, wneg.Z(), 0.0})
-				}
-			} else {
-
-				newPosition = p.Position.Add(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
 			}
-		*/
+
+		}
 
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyS)) {
-		newPosition = p.Position.Add(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+		newPosition = newPosition.Add(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+		bb = p.UpdateBoundingBox(newPosition)
+
+		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+		if collided {
+			newPosition = newPosition.Sub(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+			newPosition = newPosition.Add(mgl32.Vec4{w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+			bb = p.UpdateBoundingBox(newPosition)
+
+			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+			if collided {
+				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+
+				bb = p.UpdateBoundingBox(newPosition)
+
+				roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+				if collided {
+					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+				}
+			}
+
+		}
+
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyD)) {
-		newPosition = p.Position.Add(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+		newPosition = newPosition.Add(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+		bb = p.UpdateBoundingBox(newPosition)
+
+		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+		if collided {
+			newPosition = newPosition.Sub(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+			newPosition = newPosition.Add(mgl32.Vec4{u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+			bb = p.UpdateBoundingBox(newPosition)
+
+			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+			if collided {
+				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+
+				bb = p.UpdateBoundingBox(newPosition)
+
+				roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+				if collided {
+					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+				}
+			}
+
+		}
+
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyA)) {
-		newPosition = p.Position.Add(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+		newPosition = newPosition.Add(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+		bb = p.UpdateBoundingBox(newPosition)
+
+		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+		if collided {
+			newPosition = newPosition.Sub(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
+
+			newPosition = newPosition.Add(mgl32.Vec4{u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+			bb = p.UpdateBoundingBox(newPosition)
+
+			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+			if collided {
+				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
+
+				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+
+				bb = p.UpdateBoundingBox(newPosition)
+
+				roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
+
+				if collided {
+					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+				}
+			}
+
+		}
+
 	}
+	if collidedBelow {
+
+		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
+
+	}
+
+	p.Position = newPosition
+
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) && !p._mouseLeftDownLastUpdate && p.HitAt != nil {
 		p._mouseLeftDownLastUpdate = true
 		world.RemoveBlockFrom(*p.HitAt)
@@ -420,22 +470,28 @@ func (p *Player) Update(world *world.World) {
 		color = mgl32.Vec3{1.0, 0.0, 1.0}
 	}
 
-	/*if (world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil ||
-		world.Blocks[int(newPosition.X())][int(newPosition.Y())-1][int(newPosition.Z())] != nil ||
-		world.Blocks[int(newPosition.X())][int(newPosition.Y())+1][int(newPosition.Z())] != nil ||
-		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil ||
-		world.Blocks[int(newPosition.X()+1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
-		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()-1)] != nil ||
-		world.Blocks[int(newPosition.X()-1)][int(newPosition.Y())][int(newPosition.Z()+1)] != nil) &&
-		(world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())] != nil && world.Blocks[int(newPosition.X())][int(newPosition.Y())][int(newPosition.Z())].BlockType != game_objects.BlockWater) {
-		newPosition = p.Position
-	}*/
-	//fmt.Println(p.Position.Y())
-	if !p._isJumping {
-		//fmt.Println("Caindo....")
-		newPosition = newPosition.Sub(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
+	if collidesAbove {
+		p._isJumping = false
 	}
-	//fmt.Println("New Position Y: ", newPosition.Y())
+
+	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
+		p.Jump()
+	}
+
+	if p.IsJumping() {
+		p.HandleJump()
+	}
+
+	p.HandleWorldLimits(world)
+
+	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 0.0}))
+	p.Camera.Update()
+
+	p.HandleBlockInteractions(world)
+
+}
+
+func (p *Player) UpdateBoundingBox(newPosition mgl32.Vec4) collisions.CubeBoundingBox {
 	r := 0.3
 	Ax := r*math.Cos(p.PlayerTheta-math.Pi/4) + float64(newPosition.X())
 	Az := r*math.Sin(-p.PlayerTheta+math.Pi/4) + float64(newPosition.Z())
@@ -466,57 +522,8 @@ func (p *Player) Update(world *world.World) {
 		Mins:  mgl32.Vec3{float32(minx), miny, float32(minz)},
 		Maxes: mgl32.Vec3{float32(maxx), maxy, float32(maxz)},
 	}
-	roundedNewPositionX := int(math.Round(float64(newPosition.X())))
-	roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
-	roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
-	//fmt.Println("New PositionRounded Y: ", roundedNewPositionY)
 
-	//fmt.Println("PLAYER MAX: ", maxx, maxy, maxz)
-	//fmt.Println("PLAYER MIN: ", minx, miny, minz)
-	//fmt.Println("Testando Y...")
-	collided, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
-	//fmt.Println("Testando X e Z...")
-	fmt.Println(collided)
-	if collidedBelow {
-		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
-		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-		miny = newPosition.Y() - 1.0
-		maxy = newPosition.Y() + 1.0
-		bb = collisions.CubeBoundingBox{
-			Mins:  mgl32.Vec3{float32(minx), miny, float32(minz)},
-			Maxes: mgl32.Vec3{float32(maxx), maxy, float32(maxz)},
-		}
-		//collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world.Blocks)
-
-	}
-	fmt.Println(collided)
-	if !collided {
-		p.Position = newPosition
-
-	}
-
-	p.BoundingBox.UpdateBounds(p.Position.Vec3())
-
-	if collidesAbove {
-		p._isJumping = false
-	}
-
-	if p.IsJumping() {
-		p.HandleJump()
-	}
-	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
-		p.Jump()
-	}
-
-	p.HandleWorldLimits(world)
-
-	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 0.0}))
-	p.Camera.Update()
-
-	p.HandleBlockInteractions(world)
-
+	return bb
 }
 
 func (p *Player) HandleBlockInteractions(world *world.World) {
@@ -527,7 +534,7 @@ func (p *Player) HandleBlockInteractions(world *world.World) {
 	shouldBreak := false
 
 	// bounding box
-	for s := 0.0; s < 5.0; s += 0.5 {
+	for s := 0.0; s < 10.0; s += 0.01 {
 		if shouldBreak {
 			break
 		}

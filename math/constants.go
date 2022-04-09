@@ -1,5 +1,5 @@
 package math2
 
 const (
-	GravityAccel float32 = 12
+	GravityAccel float32 = 6
 )

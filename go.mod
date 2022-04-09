@@ -9,4 +9,7 @@ require (
 	github.com/go-gl/mathgl v1.0.0
 )
 
-require golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
+require (
+	github.com/tbogdala/noisey v1.0.0 // indirect
+	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
+)

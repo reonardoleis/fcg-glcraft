@@ -94,6 +94,7 @@ func (s *Scene) Update(window glfw.Window) {
 
 	/*window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 	roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))*/
+	gl.BindVertexArray(0)
 	window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 		realPlayerX, realPlayerY, realPlayerZ, s.World.Size.X(), s.World.Size.Z()))
 

@@ -100,7 +100,7 @@ func (p *Player) HandleLookDirection() {
 	vx := float32(math.Cos(float64(p.PlayerPhi)) * math.Sin(float64(p.PlayerTheta)))
 	vy := float32(math.Sin(float64(0)))
 	vz := float32(math.Cos(float64(p.PlayerPhi)) * math.Cos(float64(p.PlayerTheta)))
-	// fmt.Println(vx, vy, vz)
+	// // fmt.Println(vx, vy, vz)
 	p.MovementVector = mgl32.Vec4{vx, vy, vz, 0.0}
 }
 
@@ -140,16 +140,16 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 					continue
 				}
 
-				//fmt.Println("NAO NULO..")
+				//// fmt.Println("NAO NULO..")
 				cubeVertices := blocks[x][y][z].GetFutureVertices()
 
 				blockBoundingBox := collisions.NewCubeBoundingBox(blocks[x][y][z].Position.Vec3(), float32(configs.BlockSize), float32(configs.BlockSize))
 				//fmt.Println("Maximos: ", blockBoundingBox.Maxes, " Minimos: ", blockBoundingBox.Mins)
 				//fmt.Println("Maximos: ", futureBoundingBox.Maxes, " Minimos: ", futureBoundingBox.Mins)
 
-				//fmt.Println("BLOCO Max: ", blockBoundingBox.Maxes)
-				//fmt.Println("BLOCO Min: ", blockBoundingBox.Mins)
-				//fmt.Println(x, playerX, y, playerY, z, playerZ)
+				//// fmt.Println("BLOCO Max: ", blockBoundingBox.Maxes)
+				//// fmt.Println("BLOCO Min: ", blockBoundingBox.Mins)
+				//// fmt.Println(x, playerX, y, playerY, z, playerZ)
 
 				if y == roundedNewPositionY-1 && p.Collider.Collides(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
 					//fmt.Println("Colidindo abaixo...")
@@ -553,12 +553,12 @@ func (p *Player) HandleBlockInteractions(world *world.World) {
 						continue
 					}
 
-					highestX := float32(x) + (world.Blocks[x][y][z].Size)/2
-					highestY := float32(y) + (world.Blocks[x][y][z].Size)/2
-					highestZ := float32(z) + (world.Blocks[x][y][z].Size)/2
-					lowestX := float32(x) - (world.Blocks[x][y][z].Size)/2
-					lowestY := float32(y) - (world.Blocks[x][y][z].Size)/2
-					lowestZ := float32(z) - (world.Blocks[x][y][z].Size)/2
+					highestX := float32(x) + (float32(configs.BlockSize))/2
+					highestY := float32(y) + (float32(configs.BlockSize))/2
+					highestZ := float32(z) + (float32(configs.BlockSize))/2
+					lowestX := float32(x) - (float32(configs.BlockSize))/2
+					lowestY := float32(y) - (float32(configs.BlockSize))/2
+					lowestZ := float32(z) - (float32(configs.BlockSize))/2
 
 					if ray.X() <= highestX && ray.X() >= lowestX &&
 						ray.Y() <= highestY && ray.Y() >= lowestY &&

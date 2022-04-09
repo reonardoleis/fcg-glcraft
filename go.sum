@@ -6,6 +6,8 @@ github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 h1:TL70PMkdPC
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/mathgl v1.0.0 h1:t9DznWJlXxxjeeKLIdovCOVJQk/GzDEL7h/h+Ro2B68=
 github.com/go-gl/mathgl v1.0.0/go.mod h1:yhpkQzEiH9yPyxDUGzkmgScbaBVlhC06qodikEM0ZwQ=
+github.com/tbogdala/noisey v1.0.0 h1:eUSuraHgmd1pe2lO5Fx0Qg7/CtJVTf6Th36IQgRl57k=
+github.com/tbogdala/noisey v1.0.0/go.mod h1:FwQofCQVHIiDElJrxDoppufiqdOClou0XFgbahoqG78=
 golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f/go.mod h1:kZ7UVZpmo3dzQBMxlp+ypCbDeSB+sBbTgSJuh5dn5js=
 golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb h1:fqpd0EBDzlHRCjiphRR5Zo/RSWWQlWv34418dnEixWk=
 golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb/go.mod h1:FeLwcggjj3mMvU+oOTbSwawSJRM1uh48EjtB4UJZlP0=

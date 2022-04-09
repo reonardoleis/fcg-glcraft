@@ -438,10 +438,9 @@ func (p *Player) Update(world *world.World) {
 		p.Jump()
 	}
 
-	p.HandleWorldLimits(world)
-
 	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.BlockSize), 0.0, 0.0}))
 	p.Camera.Update()
+	p.HandleWorldLimits(world)
 
 	p.HandleBlockInteractions(world)
 
@@ -474,12 +473,12 @@ func (p *Player) HandleBlockInteractions(world *world.World) {
 						continue
 					}
 
-					highestX := float32(x) + (world.Blocks[x][y][z].Size)/2
-					highestY := float32(y) + (world.Blocks[x][y][z].Size)/2
-					highestZ := float32(z) + (world.Blocks[x][y][z].Size)/2
-					lowestX := float32(x) - (world.Blocks[x][y][z].Size)/2
-					lowestY := float32(y) - (world.Blocks[x][y][z].Size)/2
-					lowestZ := float32(z) - (world.Blocks[x][y][z].Size)/2
+					highestX := float32(x) + (float32(configs.BlockSize))/2
+					highestY := float32(y) + (float32(configs.BlockSize))/2
+					highestZ := float32(z) + (float32(configs.BlockSize))/2
+					lowestX := float32(x) - (float32(configs.BlockSize))/2
+					lowestY := float32(y) - (float32(configs.BlockSize))/2
+					lowestZ := float32(z) - (float32(configs.BlockSize))/2
 
 					if ray.X() <= highestX && ray.X() >= lowestX &&
 						ray.Y() <= highestY && ray.Y() >= lowestY &&

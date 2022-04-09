@@ -1,14 +1,16 @@
 package world
 
 import (
+	"fmt"
 	"math"
+	"math/rand"
 	"time"
 
-	"github.com/aquilax/go-perlin"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/game_objects"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
+	"github.com/tbogdala/noisey"
 )
 
 type WorldBlocks = map[int]map[int]map[int]*game_objects.Block
@@ -22,17 +24,18 @@ type World struct {
 	Seed                        int64
 	Time                        int64
 	Tick                        uint
-	GlobalNoise                 *perlin.Perlin
+	GlobalNoise                 *noisey.OpenSimplexGenerator
 }
 
 func NewWorld(worldName string, size mgl32.Vec3, seed int64) *World {
-
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	noiser := noisey.NewOpenSimplexGenerator(r)
 	return &World{
 		Name:        worldName,
 		Size:        size,
 		Seed:        seed,
 		Time:        0,
-		GlobalNoise: perlin.NewPerlin(2.0, 0.5, 10, time.Now().Unix()),
+		GlobalNoise: &noiser,
 	}
 }
 
@@ -85,22 +88,22 @@ func (w *World) RemoveBlockFrom(position mgl32.Vec4) {
 	lowerNeighbor := math2.Lower(position, float32(configs.BlockSize)*2)
 
 	if w.Blocks[int(northNeighbor.X())][int(northNeighbor.Y())][int(northNeighbor.Z())] != nil {
-		w.Blocks[int(northNeighbor.X())][int(northNeighbor.Y())][int(northNeighbor.Z())].Neighbors[1] = false
+		w.Blocks[int(northNeighbor.X())][int(northNeighbor.Y())][int(northNeighbor.Z())].Neighbors[1] = 0
 	}
 	if w.Blocks[int(southNeighbor.X())][int(southNeighbor.Y())][int(southNeighbor.Z())] != nil {
-		w.Blocks[int(southNeighbor.X())][int(southNeighbor.Y())][int(southNeighbor.Z())].Neighbors[0] = false
+		w.Blocks[int(southNeighbor.X())][int(southNeighbor.Y())][int(southNeighbor.Z())].Neighbors[0] = 0
 	}
 	if w.Blocks[int(eastNeighbor.X())][int(eastNeighbor.Y())][int(eastNeighbor.Z())] != nil {
-		w.Blocks[int(eastNeighbor.X())][int(eastNeighbor.Y())][int(eastNeighbor.Z())].Neighbors[3] = false
+		w.Blocks[int(eastNeighbor.X())][int(eastNeighbor.Y())][int(eastNeighbor.Z())].Neighbors[3] = 0
 	}
 	if w.Blocks[int(westNeighbor.X())][int(westNeighbor.Y())][int(westNeighbor.Z())] != nil {
-		w.Blocks[int(westNeighbor.X())][int(westNeighbor.Y())][int(westNeighbor.Z())].Neighbors[2] = false
+		w.Blocks[int(westNeighbor.X())][int(westNeighbor.Y())][int(westNeighbor.Z())].Neighbors[2] = 0
 	}
 	if w.Blocks[int(upperNeighbor.X())][int(upperNeighbor.Y())][int(upperNeighbor.Z())] != nil {
-		w.Blocks[int(upperNeighbor.X())][int(upperNeighbor.Y())][int(upperNeighbor.Z())].Neighbors[5] = false
+		w.Blocks[int(upperNeighbor.X())][int(upperNeighbor.Y())][int(upperNeighbor.Z())].Neighbors[5] = 0
 	}
 	if w.Blocks[int(lowerNeighbor.X())][int(lowerNeighbor.Y())][int(lowerNeighbor.Z())] != nil {
-		w.Blocks[int(lowerNeighbor.X())][int(lowerNeighbor.Y())][int(lowerNeighbor.Z())].Neighbors[4] = false
+		w.Blocks[int(lowerNeighbor.X())][int(lowerNeighbor.Y())][int(lowerNeighbor.Z())].Neighbors[4] = 0
 	}
 
 	w.Blocks[int(position.X())][int(position.Y())][int(position.Z())] = nil
@@ -150,33 +153,65 @@ func (w World) FindPlacementPosition(hitAt mgl32.Vec4, nearFrom mgl32.Vec4, boun
 	return &block
 }
 
-func (w *World) GenerateWorld() {
+func (w World) perlin3D(x, y, z float64) float64 {
+	r := rand.New(rand.NewSource(int64(1)))
+	noiser := noisey.NewPerlinGenerator(r)
 
-	generatedWorld := make(WorldBlocks)
+	ab := noiser.Get2D(x, y)
+	bc := noiser.Get2D(y, z)
+	ac := noiser.Get2D(x, z)
+
+	ba := noiser.Get2D(y, x)
+	cb := noiser.Get2D(z, y)
+	ca := noiser.Get2D(z, x)
+
+	abc := ab + bc + ac + ba + cb + ca
+	return abc / 6.0
+}
+
+func (w *World) GenerateWorld() {
+	//r := rand.New(rand.NewSource(time.Now().Unix()))
+	//noiser := noisey.NewPerlinGenerator(r)
+	w.Blocks = make(WorldBlocks)
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
-		if len(generatedWorld[x]) == 0 {
-			generatedWorld[x] = make(map[int]map[int]*game_objects.Block)
-		}
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 
-			y := float64(w.Size.Y()/2) + math.Round(float64(w.Size.Y()-w.Size.Y()/2)*w.GlobalNoise.Noise2D(float64(x)/float64(w.Size.X()), float64(z)/float64(w.Size.Z())))
+			y := float64(w.Size.Y()/2) + math.Round(float64(w.Size.Y()/2)*w.GlobalNoise.Get2D(float64(x)/float64(w.Size.X()), float64(z)/float64(w.Size.Z())))
 
 			for i := int(y); i >= int(math.Max(0, float64(int(y)-int(w.Size.Y()/2)))); i-- {
-				if generatedWorld[x][i] == nil {
-					generatedWorld[x][i] = make(map[int]*game_objects.Block)
-				}
+				w.PopulateIfEmpty(mgl32.Vec3{float32(x), float32(i), float32(z)})
 
 				newCube := game_objects.NewBlock(float32(x), float32(i), float32(z), 1, true, false, game_objects.BlockStone)
 				newCube.WithEdges = false
 
-				generatedWorld[x][i][z] = &newCube
+				w.Blocks[x][i][z] = &newCube
 			}
 
 		}
 
 	}
 
-	w.Blocks = generatedWorld
+	/*for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
+		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
+
+			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
+				noise := w.GlobalNoise.Get3D(float64(x)/float64(w.Size.X()), float64(y)/float64(w.Size.Y()), float64(z)/float64(w.Size.Z()))
+
+				if noise <= 0.25 {
+					w.PopulateIfEmpty(mgl32.Vec3{float32(x), float32(y), float32(z)})
+					newBlock := game_objects.NewBlock(float32(x), float32(y), float32(z), float32(configs.BlockSize), false, false, game_objects.BlockStone)
+					w.Blocks[x][y][z] = &newBlock
+				}
+
+			}
+
+		}
+
+	}*/
+
+	fmt.Println("bom dia")
+	//w.Blocks = make(WorldBlocks)
+
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
@@ -187,9 +222,7 @@ func (w *World) GenerateWorld() {
 
 					for {
 						if w.Blocks[x][index][z] == nil {
-							if len(w.Blocks[x][index]) == 0 {
-								w.Blocks[x][index] = make(map[int]*game_objects.Block)
-							}
+							w.PopulateIfEmpty(mgl32.Vec3{float32(x), float32(y), float32(z)})
 
 							newCube := game_objects.NewBlock(float32(x), float32(index), float32(z), 1, true, false, game_objects.BlockWater)
 							newCube.WithEdges = false
@@ -295,13 +328,13 @@ func (w *World) GenerateWorld() {
 					continue
 				}
 
-				if y <= 65 && w.Blocks[x][y][z].BlockType != game_objects.BlockWater {
+				/*if y <= 65 && w.Blocks[x][y][z].BlockType != game_objects.BlockWater {
 					caveNoise := w.GlobalNoise.Noise2D(float64(x)/float64(w.Size.X()), float64(y)/float64(w.Size.Y()))
 					if caveNoise >= 0.04 {
 						// fmt.Println("removendo blocok")
 						// w.Blocks[x][y][z] = nil
 					}
-				}
+				}*/
 
 			}
 
@@ -325,72 +358,72 @@ func (w *World) SetInitialNeighbors() {
 
 				if w.Blocks[blockPositionX+1][blockPositionY][blockPositionZ] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
 
 					} else if w.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 0
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
 					}
 
 				}
 				if w.Blocks[blockPositionX-1][blockPositionY][blockPositionZ] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 1
 
 					} else if w.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 0
 
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 1
 					}
 
 				}
 				if w.Blocks[blockPositionX][blockPositionY][blockPositionZ+1] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 1
 
 					} else if w.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 0
 
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 1
 					}
 
 				}
 				if w.Blocks[blockPositionX][blockPositionY][int(blockPositionZ-1)] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 1
 
 					} else if w.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 0
 
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 1
 					}
 
 				}
 				if w.Blocks[blockPositionX][blockPositionY+1][blockPositionZ] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 1
 
 					} else if w.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 0
 
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 1
 					}
 
 				}
 				if w.Blocks[blockPositionX][blockPositionY-1][blockPositionZ] != nil {
 					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 1
 
 					} else if w.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].BlockType == game_objects.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = false
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 0
 
 					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = true
+						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 1
 					}
 
 				}
@@ -457,9 +490,14 @@ func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64
 	}
 
 	for x := fromX; x < toX; x++ {
+		if (len(w.Blocks[int(x)])) == 0 {
+			continue
+		}
 		intX := int(x)
-		for y := 0; y < int(w.Size.Y()); y++ {
-
+		for y := fromY; y < toY; y++ {
+			if (len(w.Blocks[int(x)][int(y)])) == 0 {
+				continue
+			}
 			intY := int(y)
 			for z := fromZ; z < toZ; z++ {
 				intZ := int(z)
@@ -492,6 +530,9 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	sumZ := frontOfPlayer.Z() - backOfPlayer.Z()
 
 	for _, populatedBlockTypes := range w.PopulatedBlocks {
+		if len(populatedBlockTypes) == 0 {
+			continue
+		}
 		for _, populatedBlock := range populatedBlockTypes {
 			if sumX < 0 && sumZ < 0 {
 				if populatedBlock.Position.X() > backOfPlayer.X() && populatedBlock.Position.Z() > backOfPlayer.Z() {

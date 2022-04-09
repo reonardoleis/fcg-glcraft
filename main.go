@@ -73,7 +73,7 @@ func main() {
 
 	geometry.BuildFaceEdges()
 
-	world := world.NewWorld("", mgl32.Vec3{32, 16, 32}, 2300932812397)
+	world := world.NewWorld("", mgl32.Vec3{64, 128, 64}, 2300932812397)
 	world.GenerateWorld()
 	world.InitPopulatedBlocks()
 
@@ -89,7 +89,7 @@ func main() {
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{0.0, 70, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 

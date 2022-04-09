@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
@@ -20,7 +21,7 @@ var (
 	BlockEdgesOnly bool = false
 )
 
-type BlockType = uint
+type BlockType = byte
 
 const (
 	BlockGrass = iota
@@ -45,20 +46,29 @@ var (
 	sandTexture       uint32 = 0
 	numTexturesLoaded        = 0
 	model_uniform     int32
+	black             int32
+	lastTexture       uint32 = 0
+	northRotation            = math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
+	southRotation            = math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
+	eastRotation             = math2.Matrix_Identity()
+	westRotation             = math2.Matrix_Identity()
+	upperRotation            = math2.Matrix_Rotate_X((math.Pi / 180) * 90)
+	lowerRotation            = math2.Matrix_Rotate_X((math.Pi / 180) * 90)
+
+	rotations = []mgl32.Mat4{northRotation, southRotation, eastRotation, westRotation, upperRotation, lowerRotation}
 )
 
 type Block struct {
 	Position mgl32.Vec4
-	Size     float32
-	Model    mgl32.Mat4
 	// ModelGeometry geometry.GeometryInformation
 	WithEdges bool
 	// EdgesGeometry geometry.GeometryInformation
 	Ephemeral bool
 
-	BlockType
+	BlockType BlockType
 
-	Neighbors [6]bool
+	Neighbors [6]byte
+	IsCave    bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -122,26 +132,25 @@ func InitBlock() {
 	stoneTexture = newTexture("stone_0.png")
 	waterTexture = newTexture("water_0.png")
 	sandTexture = newTexture("sand_0.png")
+	model_uniform = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
+	black = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("black\000"))         // Variável da matriz "model"
+
 }
 
 func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockType) Block {
 	// modelGeometry := cubeVaoID
 	// edgesGeometry := geometry.GeometryInformation{}
 
-	model := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(x, y, z))
-
 	if withEdges {
 		// edgesGeometry = geometry.BuildCubeEdges(0, 0, 0, size)
 	}
 	return Block{
 		Position: mgl32.Vec4{x, y, z, 0.0},
-		Size:     size,
-		Model:    model,
 		// ModelGeometry: modelGeometry,
 		WithEdges: false,
 		// EdgesGeometry: edgesGeometry,
-		Ephemeral: ephemeral,
 		BlockType: blockType,
+		IsCave:    false,
 	}
 }
 
@@ -159,20 +168,16 @@ func (b Block) GetFutureVertices() [8]mgl32.Vec3 {
 
 	var vector [8]mgl32.Vec3
 
-	vector[0] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() + b.Size/2}
-	vector[1] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() + b.Size/2}
-	vector[2] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() + b.Size/2}
-	vector[3] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() + b.Size/2}
-	vector[4] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() - b.Size/2}
-	vector[5] = mgl32.Vec3{b.GetPosition().X() - b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() - b.Size/2}
-	vector[6] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() - b.Size/2, b.GetPosition().Z() - b.Size/2}
-	vector[7] = mgl32.Vec3{b.GetPosition().X() + b.Size/2, b.GetPosition().Y() + b.Size/2, b.GetPosition().Z() - b.Size/2}
+	vector[0] = mgl32.Vec3{b.GetPosition().X() - float32(configs.BlockSize)/2, b.GetPosition().Y() + float32(configs.BlockSize)/2, b.GetPosition().Z() + float32(configs.BlockSize)/2}
+	vector[1] = mgl32.Vec3{b.GetPosition().X() - float32(configs.BlockSize)/2, b.GetPosition().Y() - float32(configs.BlockSize)/2, b.GetPosition().Z() + float32(configs.BlockSize)/2}
+	vector[2] = mgl32.Vec3{b.GetPosition().X() + float32(configs.BlockSize)/2, b.GetPosition().Y() - float32(configs.BlockSize)/2, b.GetPosition().Z() + float32(configs.BlockSize)/2}
+	vector[3] = mgl32.Vec3{b.GetPosition().X() + float32(configs.BlockSize)/2, b.GetPosition().Y() + float32(configs.BlockSize)/2, b.GetPosition().Z() + float32(configs.BlockSize)/2}
+	vector[4] = mgl32.Vec3{b.GetPosition().X() - float32(configs.BlockSize)/2, b.GetPosition().Y() + float32(configs.BlockSize)/2, b.GetPosition().Z() - float32(configs.BlockSize)/2}
+	vector[5] = mgl32.Vec3{b.GetPosition().X() - float32(configs.BlockSize)/2, b.GetPosition().Y() - float32(configs.BlockSize)/2, b.GetPosition().Z() - float32(configs.BlockSize)/2}
+	vector[6] = mgl32.Vec3{b.GetPosition().X() + float32(configs.BlockSize)/2, b.GetPosition().Y() - float32(configs.BlockSize)/2, b.GetPosition().Z() - float32(configs.BlockSize)/2}
+	vector[7] = mgl32.Vec3{b.GetPosition().X() + float32(configs.BlockSize)/2, b.GetPosition().Y() + float32(configs.BlockSize)/2, b.GetPosition().Z() - float32(configs.BlockSize)/2}
 
 	return vector
-}
-
-func (c *Block) Translate(x, y, z float32) {
-	c.Model = math2.Matrix_Identity().Mul4(math2.Matrix_Translate(x, y, z))
 }
 
 func newTexture(file string) uint32 {
@@ -218,60 +223,52 @@ func newTexture(file string) uint32 {
 }
 
 func (b Block) CountNeighbors() int {
-	count := 0
-	for _, neighbor := range b.Neighbors {
-		if neighbor {
-			count++
-		}
-	}
-
-	return count
+	return int(b.Neighbors[0] + b.Neighbors[1] + b.Neighbors[2] +
+		b.Neighbors[3] + b.Neighbors[4] + b.Neighbors[5])
 }
 
 func (b Block) Draw2() {
-
-	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
-	black := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("black\000"))         // Variável da matriz "model"
+	//
 	blockTextures := getBlockTexture(b.BlockType)
-	north := math2.North(b.Position, b.Size)
-	south := math2.South(b.Position, b.Size)
-	east := math2.East(b.Position, b.Size)
-	west := math2.West(b.Position, b.Size)
-	upper := math2.Upper(b.Position, b.Size)
-	lower := math2.Lower(b.Position, b.Size)
-	faces := []mgl32.Vec4{north, south, east, west, upper, lower}
-	northRotation := math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
-	southRotation := math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
-	eastRotation := math2.Matrix_Identity()
-	westRotation := math2.Matrix_Identity()
-	upperRotation := math2.Matrix_Rotate_X((math.Pi / 180) * 90)
-	lowerRotation := math2.Matrix_Rotate_X((math.Pi / 180) * 90)
 
-	rotations := []mgl32.Mat4{northRotation, southRotation, eastRotation, westRotation, upperRotation, lowerRotation}
+	north := math2.North(b.Position, float32(configs.BlockSize))
+	south := math2.South(b.Position, float32(configs.BlockSize))
+	east := math2.East(b.Position, float32(configs.BlockSize))
+	west := math2.West(b.Position, float32(configs.BlockSize))
+	upper := math2.Upper(b.Position, float32(configs.BlockSize))
+	lower := math2.Lower(b.Position, float32(configs.BlockSize))
+	faces := []mgl32.Vec4{north, south, east, west, upper, lower}
 
 	diff := 0.0
 	if b.BlockType == BlockWater {
 		diff = 0.2
 	}
-	gl.BindVertexArray(geometry.Faces[b.BlockType].VaoID)
+
+	gl.BindVertexArray(geometry.Faces[0].VaoID)
+	gl.Uniform1i(black, 0)
 	for index, face := range faces {
-		if b.Neighbors[index] {
+		if b.Neighbors[index] == 1 {
 			continue
 		}
+
 		if !BlockEdgesOnly {
-			gl.ActiveTexture(gl.TEXTURE0)
-			gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
+			if lastTexture != blockTextures[index] {
+				gl.ActiveTexture(gl.TEXTURE0)
+				gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
+				lastTexture = blockTextures[index]
+			}
 
 			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
 
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
-			gl.Uniform1i(black, 0)
+
 			gl.DrawElements(
 				uint32(geometry.Faces[b.BlockType].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
 				int32(geometry.Faces[b.BlockType].NumIndices),
 				gl.UNSIGNED_INT,
 				geometry.Faces[b.BlockType].FirstIndex,
 			)
+
 			if b.WithEdges {
 
 				faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
@@ -302,7 +299,7 @@ func (b Block) Draw2() {
 
 }
 
-func (b Block) Draw() {
+/*func (b Block) Draw() {
 	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000"))                     // Variável da matriz "model"
 	render_as_black_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("render_as_black\000")) // Variável booleana em shader_vertex.glsl
 
@@ -328,8 +325,8 @@ func (b Block) Draw() {
 			gl.UNSIGNED_INT,
 			b.EdgesGeometry.FirstIndex,
 		)
-	}*/
-}
+	}
+}*/
 
 func (b Block) GetPosition() mgl32.Vec4 {
 	return b.Position

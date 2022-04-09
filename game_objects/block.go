@@ -30,6 +30,7 @@ const (
 	BlockSand
 	BlockStone
 	BlockWater
+	BlockGlass
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 	stoneTexture      uint32 = 0
 	waterTexture      uint32 = 0
 	sandTexture       uint32 = 0
+	glassTexture      uint32 = 0
 	numTexturesLoaded        = 0
 	model_uniform     int32
 	redTexture        uint32 = 0
@@ -73,6 +75,7 @@ func GetBlockTypes() []BlockType {
 		BlockSand,
 		BlockStone,
 		BlockWater,
+		BlockGlass,
 	}
 }
 
@@ -92,6 +95,8 @@ func getBlockTexture(blockType BlockType) []uint32 {
 		return []uint32{waterTexture, waterTexture, waterTexture, waterTexture, waterTexture, waterTexture}
 	case BlockSand:
 		return []uint32{sandTexture, sandTexture, sandTexture, sandTexture, sandTexture, sandTexture}
+	case BlockGlass:
+		return []uint32{glassTexture, glassTexture, glassTexture, glassTexture, glassTexture, glassTexture}
 	}
 
 	return []uint32{grassSideTexture, grassSideTexture, grassSideTexture, grassSideTexture, grassTopTexture, dirtTexture}
@@ -126,6 +131,7 @@ func InitBlock() {
 	waterTexture = newTexture("water_0.png")
 	sandTexture = newTexture("sand_0.png")
 	redTexture = newTexture("red_0.png")
+	glassTexture = newTexture("glass_0.png")
 }
 
 func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockType) Block {
@@ -257,7 +263,7 @@ func (b Block) Draw2() {
 	if b.BlockType == BlockWater {
 		diff = 0.2
 	}
-	gl.BindVertexArray(geometry.Faces[b.BlockType].VaoID)
+	gl.BindVertexArray(geometry.Faces[0].VaoID)
 	for index, face := range faces {
 		if b.Neighbors[index] {
 			continue
@@ -276,10 +282,10 @@ func (b Block) Draw2() {
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
 			gl.Uniform1i(black, 0)
 			gl.DrawElements(
-				uint32(geometry.Faces[b.BlockType].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
-				int32(geometry.Faces[b.BlockType].NumIndices),
+				uint32(geometry.Faces[0].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
+				int32(geometry.Faces[0].NumIndices),
 				gl.UNSIGNED_INT,
-				geometry.Faces[b.BlockType].FirstIndex,
+				geometry.Faces[0].FirstIndex,
 			)
 			if b.WithEdges {
 

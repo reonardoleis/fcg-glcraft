@@ -9,6 +9,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/collisions"
 	"github.com/reonardoleis/fcg-glcraft/configs"
+	"github.com/reonardoleis/fcg-glcraft/game_objects"
 
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
@@ -43,6 +44,7 @@ type Player struct {
 	BoundingBox               *collisions.CubeBoundingBox
 	BoundingBox2              *collisions.CubeBoundingBox
 	BoundingBoxFutureVertices [8]mgl32.Vec3
+	SelectedBlock             game_objects.BlockType
 }
 
 func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walkingSpeed, runningMultiplier, jumpHeight, jumpSpeed, height float32) Player {
@@ -70,6 +72,7 @@ func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walk
 		BoundingBox:               collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth*0.5, configs.PlayerHeight*0.5),
 		BoundingBox2:              collisions.NewCubeBoundingBox(playerPosition.Vec3(), configs.PlayerWidth, configs.PlayerHeight),
 		BoundingBoxFutureVertices: [8]mgl32.Vec3{},
+		SelectedBlock:             game_objects.BlockDirt,
 	}
 }
 
@@ -354,12 +357,37 @@ func (p *Player) Update(world *world.World) {
 		p._mouseLeftDownLastUpdate = false
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
-		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, mgl32.Vec3{})
+		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, p.SelectedBlock)
 		p.ClosestEmptySpace = nil
 		p._mouseRightDownLastUpdate = true
 	}
 	if !p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) {
 		p._mouseRightDownLastUpdate = false
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.Key1)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[0]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key2)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[1]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key3)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[2]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key4)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[3]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key5)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[4]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key6)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[5]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key7)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[6]
+	}
+	if p.ControlHandler.IsDown(int(glfw.Key8)) {
+		p.SelectedBlock = game_objects.GetBlockTypes()[7]
 	}
 
 	if p.ControlHandler.IsToggled(int(glfw.KeyLeftShift)) {

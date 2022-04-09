@@ -25,7 +25,16 @@ func (cc CubeCollider) Collides(a, b CubeBoundingBox, av, bv [8]mgl32.Vec3) bool
 		bv[4].X() >= a.Mins.X() && bv[4].X() <= a.Maxes.X() && bv[4].Y() >= a.Mins.Y() && bv[4].Y() <= a.Maxes.Y() && bv[4].Z() >= a.Mins.Z() && bv[4].Z() <= a.Maxes.Z() ||
 		bv[5].X() >= a.Mins.X() && bv[5].X() <= a.Maxes.X() && bv[5].Y() >= a.Mins.Y() && bv[5].Y() <= a.Maxes.Y() && bv[5].Z() >= a.Mins.Z() && bv[5].Z() <= a.Maxes.Z() ||
 		bv[6].X() >= a.Mins.X() && bv[6].X() <= a.Maxes.X() && bv[6].Y() >= a.Mins.Y() && bv[6].Y() <= a.Maxes.Y() && bv[6].Z() >= a.Mins.Z() && bv[6].Z() <= a.Maxes.Z() ||
-		bv[7].X() >= a.Mins.X() && bv[7].X() <= a.Maxes.X() && bv[7].Y() >= a.Mins.Y() && bv[7].Y() <= a.Maxes.Y() && bv[7].Z() >= a.Mins.Z() && bv[7].Z() <= a.Maxes.Z() {
+		bv[7].X() >= a.Mins.X() && bv[7].X() <= a.Maxes.X() && bv[7].Y() >= a.Mins.Y() && bv[7].Y() <= a.Maxes.Y() && bv[7].Z() >= a.Mins.Z() && bv[7].Z() <= a.Maxes.Z() ||
+
+		av[0].X() >= b.Mins.X() && av[0].X() <= b.Maxes.X() && av[0].Y()+0.5 >= b.Mins.Y() && av[0].Y()+0.5 <= b.Maxes.Y() && av[0].Z() >= b.Mins.Z() && av[0].Z() <= b.Maxes.Z() ||
+		av[1].X() >= b.Mins.X() && av[1].X() <= b.Maxes.X() && av[1].Y()+0.5 >= b.Mins.Y() && av[1].Y()+0.5 <= b.Maxes.Y() && av[1].Z() >= b.Mins.Z() && av[1].Z() <= b.Maxes.Z() ||
+		av[2].X() >= b.Mins.X() && av[2].X() <= b.Maxes.X() && av[2].Y()+0.5 >= b.Mins.Y() && av[2].Y()+0.5 <= b.Maxes.Y() && av[2].Z() >= b.Mins.Z() && av[2].Z() <= b.Maxes.Z() ||
+		av[3].X() >= b.Mins.X() && av[3].X() <= b.Maxes.X() && av[3].Y()+0.5 >= b.Mins.Y() && av[3].Y()+0.5 <= b.Maxes.Y() && av[3].Z() >= b.Mins.Z() && av[3].Z() <= b.Maxes.Z() ||
+		av[0].X() >= b.Mins.X() && av[0].X() <= b.Maxes.X() && av[0].Y()+1.0 >= b.Mins.Y() && av[0].Y()+1.0 <= b.Maxes.Y() && av[0].Z() >= b.Mins.Z() && av[0].Z() <= b.Maxes.Z() ||
+		av[1].X() >= b.Mins.X() && av[1].X() <= b.Maxes.X() && av[1].Y()+1.0 >= b.Mins.Y() && av[1].Y()+1.0 <= b.Maxes.Y() && av[1].Z() >= b.Mins.Z() && av[1].Z() <= b.Maxes.Z() ||
+		av[2].X() >= b.Mins.X() && av[2].X() <= b.Maxes.X() && av[2].Y()+1.0 >= b.Mins.Y() && av[2].Y()+1.0 <= b.Maxes.Y() && av[2].Z() >= b.Mins.Z() && av[2].Z() <= b.Maxes.Z() ||
+		av[3].X() >= b.Mins.X() && av[3].X() <= b.Maxes.X() && av[3].Y()+1.0 >= b.Mins.Y() && av[3].Y()+1.0 <= b.Maxes.Y() && av[3].Z() >= b.Mins.Z() && av[3].Z() <= b.Maxes.Z() {
 		return true
 	}
 

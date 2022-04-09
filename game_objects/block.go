@@ -45,6 +45,7 @@ var (
 	sandTexture       uint32 = 0
 	numTexturesLoaded        = 0
 	model_uniform     int32
+	redTexture        uint32 = 0
 )
 
 type Block struct {
@@ -59,6 +60,8 @@ type Block struct {
 	BlockType
 
 	Neighbors [6]bool
+
+	Colliding bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -122,6 +125,7 @@ func InitBlock() {
 	stoneTexture = newTexture("stone_0.png")
 	waterTexture = newTexture("water_0.png")
 	sandTexture = newTexture("sand_0.png")
+	redTexture = newTexture("red_0.png")
 }
 
 func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockType) Block {
@@ -259,8 +263,13 @@ func (b Block) Draw2() {
 			continue
 		}
 		if !BlockEdgesOnly {
-			gl.ActiveTexture(gl.TEXTURE0)
-			gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
+			if !b.Colliding {
+				gl.ActiveTexture(gl.TEXTURE0)
+				gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
+			} else {
+				gl.ActiveTexture(gl.TEXTURE0)
+				gl.BindTexture(gl.TEXTURE_2D, redTexture)
+			}
 
 			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
 

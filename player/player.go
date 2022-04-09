@@ -451,7 +451,7 @@ func (p *Player) Update(world *world.World) {
 	maxx := math.Max(Ax, math.Max(Bx, math.Max(Cx, Dx)))
 	maxz := math.Max(Az, math.Max(Bz, math.Max(Cz, Dz)))
 	miny := newPosition.Y() - 1.0
-	maxy := newPosition.Y() + 1.0
+	maxy := newPosition.Y() + 0.8
 
 	p.BoundingBoxFutureVertices[0] = mgl32.Vec3{float32(Ax), miny, float32(Az)}
 	p.BoundingBoxFutureVertices[1] = mgl32.Vec3{float32(Bx), miny, float32(Bz)}

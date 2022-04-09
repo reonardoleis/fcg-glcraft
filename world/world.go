@@ -216,7 +216,7 @@ func (w *World) GenerateWorld() {
 		for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
 			for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
 
-				if y < 62 && w.Blocks[x][y][z] == nil {
+				if y < 8 && w.Blocks[x][y][z] == nil {
 
 					index := y
 
@@ -483,7 +483,7 @@ func (w *World) PlaceTree(position mgl32.Vec3) {
 	w.Blocks[int(blockPosition.X())][int(blockPosition.Y())][int(blockPosition.Z())] = &treeBlock
 }
 
-func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64) {
+func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64, playerPosition mgl32.Vec4) {
 	blockTypes := game_objects.GetBlockTypes()
 	for _, blockType := range blockTypes {
 		w.PopulatedBlocks[blockType] = []*game_objects.Block{}
@@ -508,6 +508,16 @@ func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64
 
 				w.PopulatedBlocks[w.Blocks[intX][intY][intZ].BlockType] = append(w.PopulatedBlocks[w.Blocks[intX][intY][intZ].BlockType], w.Blocks[intX][intY][intZ])
 
+			}
+		}
+	}
+
+	for i := 0; i < len(w.PopulatedBlocks[game_objects.BlockGlass]); i++ {
+		for j := i; j < len(w.PopulatedBlocks[game_objects.BlockGlass]); j++ {
+			if math2.Distance(w.PopulatedBlocks[game_objects.BlockGlass][i].Position, playerPosition) < math2.Distance(w.PopulatedBlocks[game_objects.BlockGlass][j].Position, playerPosition) {
+				temp := w.PopulatedBlocks[game_objects.BlockGlass][i]
+				w.PopulatedBlocks[game_objects.BlockGlass][i] = w.PopulatedBlocks[game_objects.BlockGlass][j]
+				w.PopulatedBlocks[game_objects.BlockGlass][j] = temp
 			}
 		}
 	}
@@ -567,7 +577,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	}
 
 	if w.ShouldUpdatePopulatedBlocks {
-		w.UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ)
+		w.UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ, mgl32.Vec4{roundedPlayerPosition.X(), roundedPlayerPosition.Y(), roundedPlayerPosition.Z(), 1.0})
 	}
 
 }

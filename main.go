@@ -21,6 +21,7 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/camera"
+	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	rendererPkg "github.com/reonardoleis/fcg-glcraft/engine/renderer"
 	"github.com/reonardoleis/fcg-glcraft/engine/scene"
@@ -89,7 +90,7 @@ func main() {
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 10, 2.0, 4, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 70, 0.0, 1.0}, controlHandler, 5, 2.0, configs.JumpHeight, 10, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 

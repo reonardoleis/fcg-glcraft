@@ -31,6 +31,7 @@ const (
 	BlockSand
 	BlockStone
 	BlockWater
+	BlockGlass
 )
 
 var (
@@ -44,8 +45,10 @@ var (
 	stoneTexture      uint32 = 0
 	waterTexture      uint32 = 0
 	sandTexture       uint32 = 0
+	glassTexture      uint32 = 0
 	numTexturesLoaded        = 0
 	model_uniform     int32
+	redTexture        uint32 = 0
 	black             int32
 	lastTexture       uint32 = 0
 	northRotation            = math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
@@ -68,7 +71,8 @@ type Block struct {
 	BlockType BlockType
 
 	Neighbors [6]byte
-	IsCave    bool
+
+	Colliding bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -80,6 +84,7 @@ func GetBlockTypes() []BlockType {
 		BlockSand,
 		BlockStone,
 		BlockWater,
+		BlockGlass,
 	}
 }
 
@@ -99,6 +104,8 @@ func getBlockTexture(blockType BlockType) []uint32 {
 		return []uint32{waterTexture, waterTexture, waterTexture, waterTexture, waterTexture, waterTexture}
 	case BlockSand:
 		return []uint32{sandTexture, sandTexture, sandTexture, sandTexture, sandTexture, sandTexture}
+	case BlockGlass:
+		return []uint32{glassTexture, glassTexture, glassTexture, glassTexture, glassTexture, glassTexture}
 	}
 
 	return []uint32{grassSideTexture, grassSideTexture, grassSideTexture, grassSideTexture, grassTopTexture, dirtTexture}
@@ -132,6 +139,8 @@ func InitBlock() {
 	stoneTexture = newTexture("stone_0.png")
 	waterTexture = newTexture("water_0.png")
 	sandTexture = newTexture("sand_0.png")
+	redTexture = newTexture("red_0.png")
+	glassTexture = newTexture("glass_0.png")
 	model_uniform = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
 	black = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("black\000"))         // Variável da matriz "model"
 
@@ -150,7 +159,6 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 		WithEdges: false,
 		// EdgesGeometry: edgesGeometry,
 		BlockType: blockType,
-		IsCave:    false,
 	}
 }
 
@@ -252,10 +260,12 @@ func (b Block) Draw2() {
 		}
 
 		if !BlockEdgesOnly {
-			if lastTexture != blockTextures[index] {
+			if !b.Colliding {
 				gl.ActiveTexture(gl.TEXTURE0)
 				gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
-				lastTexture = blockTextures[index]
+			} else {
+				gl.ActiveTexture(gl.TEXTURE0)
+				gl.BindTexture(gl.TEXTURE_2D, redTexture)
 			}
 
 			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
@@ -263,10 +273,10 @@ func (b Block) Draw2() {
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
 
 			gl.DrawElements(
-				uint32(geometry.Faces[b.BlockType].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
-				int32(geometry.Faces[b.BlockType].NumIndices),
+				uint32(geometry.Faces[0].RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
+				int32(geometry.Faces[0].NumIndices),
 				gl.UNSIGNED_INT,
-				geometry.Faces[b.BlockType].FirstIndex,
+				geometry.Faces[0].FirstIndex,
 			)
 
 			if b.WithEdges {

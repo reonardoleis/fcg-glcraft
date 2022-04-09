@@ -62,8 +62,8 @@ func (w World) FindHighestBlock(wx, wz int) *game_objects.Block {
 	return highestBlock
 }
 
-func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, color mgl32.Vec3) {
-	// // fmt.Println(position)
+func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType game_objects.BlockType) {
+	// fmt.Println(position)
 	x, y, z := position.Elem()
 	if w.Blocks[int(x)] == nil {
 		w.Blocks[int(x)] = make(map[int]map[int]*game_objects.Block)
@@ -73,7 +73,7 @@ func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, color mgl32.Vec3
 		w.Blocks[int(x)][int(y)] = make(map[int]*game_objects.Block)
 	}
 
-	newCube := game_objects.NewBlock(float32(x), float32(y), float32(z), 1, true, ephemeral, game_objects.BlockWood)
+	newCube := game_objects.NewBlock(float32(x), float32(y), float32(z), 1, true, ephemeral, blockType)
 	newCube.WithEdges = false
 	w.Blocks[int(x)][int(y)][int(z)] = &newCube
 	w.ShouldUpdatePopulatedBlocks = true
@@ -553,6 +553,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 			}
 			populatedBlock.Draw2()
 			populatedBlock.WithEdges = false
+			populatedBlock.Colliding = false
 		}
 
 	}

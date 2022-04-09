@@ -79,7 +79,8 @@ func (s *Scene) Update(window glfw.Window) {
 	s.Player.Update(s.World)
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()
-	playerY := float64(s.Player.Position.Y())
+	realPlayerX, realPlayerY, realPlayerZ := s.Player.GetRealPosition()
+	//playerY := float64(s.Player.Position.Y())
 
 	if s.ControlHandler.IsToggled(int(glfw.KeyZ)) {
 		game_objects.BlockEdgesOnly = true
@@ -90,9 +91,12 @@ func (s *Scene) Update(window glfw.Window) {
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
 
 	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer)
+
+	/*window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
+	roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))*/
 	gl.BindVertexArray(0)
 	window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
-		roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))
+		realPlayerX, realPlayerY, realPlayerZ, s.World.Size.X(), s.World.Size.Z()))
 
 	s.ControlHandler.FinishMousePositionChanged()
 	window.SwapBuffers()

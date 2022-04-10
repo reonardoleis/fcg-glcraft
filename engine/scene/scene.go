@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/reonardoleis/fcg-glcraft/block"
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
-	"github.com/reonardoleis/fcg-glcraft/game_objects"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
@@ -76,21 +76,36 @@ func (s *Scene) Update(window glfw.Window) {
 
 	gl.UseProgram(shaders.ShaderProgramDefault)
 
-	s.Player.Update(s.World)
+	if s.World.ShouldUpdateChunks {
+		s.World.Chunks = s.World.FutureChunks
+		s.World.ShouldUpdateChunks = false
+	}
+
+	cx, cz := s.Player.GetChunkOffset().Elem()
+	//fmt.Println("Estou no chunk ", cx, cz)
+
+	currentChunk := s.World.Chunks[int(cx)][int(cz)]
+
+	if currentChunk.ID != s.Player.LastChunk {
+		s.World.FutureChunks = s.World.Chunks
+		go s.World.HandleChunkChange(currentChunk)
+	}
+
+	s.Player.Update(s.World, s.World.Chunks[int(cx)][int(cz)])
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()
 	realPlayerX, realPlayerY, realPlayerZ := s.Player.GetRealPosition()
 	//playerY := float64(s.Player.Position.Y())
 
 	if s.ControlHandler.IsToggled(int(glfw.KeyZ)) {
-		game_objects.BlockEdgesOnly = true
+		block.BlockEdgesOnly = true
 	} else {
-		game_objects.BlockEdgesOnly = false
+		block.BlockEdgesOnly = false
 	}
 
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
 
-	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer)
+	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer, currentChunk)
 
 	/*window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 	roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))*/

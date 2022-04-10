@@ -20,6 +20,7 @@ import (
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/reonardoleis/fcg-glcraft/block"
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
@@ -27,7 +28,6 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/scene"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
-	"github.com/reonardoleis/fcg-glcraft/game_objects"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
@@ -66,7 +66,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	game_objects.InitBlock() // LoadTextureImage(...)
+	block.InitBlock() // LoadTextureImage(...)
 
 	for i := 0; i < 7; i++ {
 		geometry.BuildFace(i) // BuildTriangles...
@@ -76,7 +76,7 @@ func main() {
 
 	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
 	world.GenerateWorld()
-	world.InitPopulatedBlocks()
+	// world.InitPopulatedBlocks()
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
@@ -90,7 +90,7 @@ func main() {
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{0.0, 70, 0.0, 1.0}, controlHandler, 5, 2.0, configs.JumpHeight, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 5, 2.0, configs.JumpHeight, 10, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 

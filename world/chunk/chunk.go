@@ -163,14 +163,14 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			for z := 0; z < int(configs.ChunkSize); z++ {
-				if y < 1 && c.Blocks[x][y][z] == nil {
-					index := y
-					for {
-						if c.Blocks[x][index][z] == nil {
-							waterBlock := block.NewBlock(float32(x), float32(index), float32(z), float32(configs.BlockSize), false, false, block.BlockWater)
-							c.Blocks[x][index][z] = &waterBlock
+				if y < 32 && c.Blocks[x][y][z] == nil {
 
-							index--
+					for index := y; index > 1; index-- {
+
+						if c.Blocks[x][index][z] == nil {
+							//fmt.Println("gerando agua")
+							waterBlock := block.NewBlock(float32(x)+(float32(configs.ChunkSize)*c.Offset[0]), float32(index), float32(z)+(float32(configs.ChunkSize)*c.Offset[1]), float32(configs.BlockSize), false, false, block.BlockWater)
+							c.Blocks[x][index][z] = &waterBlock
 							if index <= 1 {
 								break
 							}

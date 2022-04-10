@@ -1,4 +1,4 @@
-package game_objects
+package block
 
 import (
 	"fmt"

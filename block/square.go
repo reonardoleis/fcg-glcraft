@@ -1,4 +1,4 @@
-package game_objects
+package block
 
 import (
 	"github.com/go-gl/mathgl/mgl32"

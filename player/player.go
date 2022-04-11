@@ -129,7 +129,7 @@ func (p *Player) HandleJump() {
 	}
 }
 
-func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY int, roundedNewPositionZ int, futureBoundingBox collisions.CubeBoundingBox, chunk *chunk.Chunk) (collidesSides, collidesBelow, collidesAbove bool) {
+func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY int, roundedNewPositionZ int, futureBoundingBox collisions.CubeBoundingBox, world *world.World) (collidesSides, collidesBelow, collidesAbove bool) {
 	//fmt.Println("Checando colisoes no chunk ", chunk.ID)
 	//fmt.Println(futureBoundingBox)
 	//fmt.Println("Iterando...")
@@ -138,7 +138,7 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 		for y := roundedNewPositionY - 1; y <= roundedNewPositionY+1; y++ {
 			for z := roundedNewPositionZ - 1; z <= roundedNewPositionZ+1; z++ {
 				//fmt.Println("Y: ", y)
-				blockToVerify := chunk.GetBlockAt(x, y, z)
+				blockToVerify := world.GetBlockAt(x, y, z)
 				if blockToVerify == nil {
 					//fmt.Println("NULO:", x, y, z)
 					continue
@@ -208,7 +208,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
 	roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
 
-	_, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+	_, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 	//wneg := w.Mul(-1)
 	if p.ControlHandler.IsDown(int(glfw.KeyW)) {
@@ -220,7 +220,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 		if collided {
 			newPosition = newPosition.Sub(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
@@ -233,7 +233,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 			if collided {
 				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
@@ -246,7 +246,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
 					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
@@ -265,7 +265,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 		if collided {
 			newPosition = newPosition.Sub(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
@@ -278,7 +278,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 			if collided {
 				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
@@ -291,7 +291,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
 					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
@@ -310,7 +310,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 		if collided {
 			newPosition = newPosition.Sub(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
@@ -323,7 +323,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 			if collided {
 				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
@@ -336,7 +336,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
 					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
@@ -355,7 +355,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 		if collided {
 			newPosition = newPosition.Sub(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
@@ -368,7 +368,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 			if collided {
 				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
@@ -381,7 +381,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, chunk)
+				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
 					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
@@ -401,14 +401,14 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) && !p._mouseLeftDownLastUpdate && p.HitAt != nil {
 		p._mouseLeftDownLastUpdate = true
-		chunk.RemoveBlockFrom(*p.HitAt)
+		world.RemoveBlockFrom(p.HitAt)
 		p.HitAt = nil
 	}
 	if !p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) {
 		p._mouseLeftDownLastUpdate = false
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
-		chunk.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, p.SelectedBlock)
+		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, p.SelectedBlock)
 		p.ClosestEmptySpace = nil
 		p._mouseRightDownLastUpdate = true
 	}
@@ -489,7 +489,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	p.Camera.Update()
 
 	p.LastChunk = chunk.ID
-	p.HandleBlockInteractions(chunk)
+	p.HandleBlockInteractions(world, chunk)
 
 }
 
@@ -528,7 +528,7 @@ func (p *Player) UpdateBoundingBox(newPosition mgl32.Vec4) collisions.CubeBoundi
 	return bb
 }
 
-func (p *Player) HandleBlockInteractions(chunk *chunk.Chunk) {
+func (p *Player) HandleBlockInteractions(world *world.World, chunk *chunk.Chunk) {
 	lookingAtPoint := p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 1.0}).Add(p.Camera.ViewVector)
 	lookingDirection := lookingAtPoint.Sub(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 1.0}))
 
@@ -551,7 +551,7 @@ func (p *Player) HandleBlockInteractions(chunk *chunk.Chunk) {
 					break
 				}
 				for z := pz - 2; z <= pz+2; z++ {
-					if chunk.GetBlockAt(x, y, z) == nil {
+					if world.GetBlockAt(x, y, z) == nil {
 						continue
 					}
 

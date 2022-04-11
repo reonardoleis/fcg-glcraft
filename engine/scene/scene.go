@@ -70,7 +70,7 @@ func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Play
 func (s *Scene) Update(window glfw.Window) {
 
 	cx, cz := s.Player.GetChunkOffset().Elem()
-	//fmt.Println("Estou no chunk ", cx, cz)
+	fmt.Println("Estou no chunk ", cx, cz)
 
 	currentChunk := s.World.Chunks[int(cx)][int(cz)]
 

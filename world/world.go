@@ -1,6 +1,7 @@
 package world
 
 import (
+	"math"
 	"math/rand"
 	"time"
 
@@ -91,8 +92,6 @@ func (w *World) GenerateWorld() {
 		}
 	}
 }
-
-func (w World) GetChunk() {}
 
 func (w *World) SetInitialNeighbors() {
 	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
@@ -231,48 +230,6 @@ func (w *World) PlaceTree(position mgl32.Vec3) {
 	w.Blocks[int(blockPosition.X())][int(blockPosition.Y())][int(blockPosition.Z())] = &treeBlock
 }
 
-func (w *World) UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ float64, playerPosition mgl32.Vec4) {
-	blockTypes := block.GetBlockTypes()
-	for _, blockType := range blockTypes {
-		w.PopulatedBlocks[blockType] = []*block.Block{}
-	}
-
-	for x := fromX; x < toX; x++ {
-		if (len(w.Blocks[int(x)])) == 0 {
-			continue
-		}
-		intX := int(x)
-		for y := fromY; y < toY; y++ {
-			if (len(w.Blocks[int(x)][int(y)])) == 0 {
-				continue
-			}
-			intY := int(y)
-			for z := fromZ; z < toZ; z++ {
-				intZ := int(z)
-
-				if w.Blocks[intX][intY][intZ] == nil || w.Blocks[intX][intY][intZ].CountNeighbors() == 6 {
-					continue
-				}
-
-				w.PopulatedBlocks[w.Blocks[intX][intY][intZ].BlockType] = append(w.PopulatedBlocks[w.Blocks[intX][intY][intZ].BlockType], w.Blocks[intX][intY][intZ])
-
-			}
-		}
-	}
-
-	for i := 0; i < len(w.PopulatedBlocks[block.BlockGlass]); i++ {
-		for j := i; j < len(w.PopulatedBlocks[block.BlockGlass]); j++ {
-			if math2.Distance(w.PopulatedBlocks[block.BlockGlass][i].Position, playerPosition) < math2.Distance(w.PopulatedBlocks[block.BlockGlass][j].Position, playerPosition) {
-				temp := w.PopulatedBlocks[block.BlockGlass][i]
-				w.PopulatedBlocks[block.BlockGlass][i] = w.PopulatedBlocks[block.BlockGlass][j]
-				w.PopulatedBlocks[block.BlockGlass][j] = temp
-			}
-		}
-	}
-
-	w.ShouldUpdatePopulatedBlocks = false
-}
-
 func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPlayer mgl32.Vec3, currentChunk *chunk.Chunk) {
 
 	/*maxDist := float64(configs.ViewDistance)
@@ -346,5 +303,44 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	}
 
 	w.Tick += math2.DeltaTime
+}
 
+func (w *World) GetChunk(x, z int) *chunk.Chunk {
+	chunkRow, chunkColumn := int(math.Floor(float64(x)/float64(configs.ChunkSize))), int(math.Floor(float64(z)/float64(configs.ChunkSize)))
+	if len(w.Chunks[chunkRow]) == 0 {
+		return nil
+	}
+
+	chunk := w.Chunks[chunkRow][chunkColumn]
+
+	return chunk
+}
+
+func (w *World) GetBlockAt(x, y, z int) *block.Block {
+	chunk := w.GetChunk(x, z)
+	if chunk == nil {
+		return nil
+	}
+
+	blockToReturn := chunk.GetBlockAt(x, y, z)
+
+	return blockToReturn
+}
+
+func (w *World) RemoveBlockFrom(position *mgl32.Vec4) {
+	chunk := w.GetChunk(int(position.X()), int(position.Z()))
+	if chunk == nil {
+		return
+	}
+
+	chunk.RemoveBlockFrom(*position)
+}
+
+func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.BlockType) {
+	chunk := w.GetChunk(int(position.X()), int(position.Z()))
+	if chunk == nil {
+		return
+	}
+
+	chunk.AddBlockAt(position, ephemeral, blockType)
 }

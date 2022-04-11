@@ -16,11 +16,19 @@ var (
 	SerialChunkID uint64 = 0
 )
 
+type BlockInformation = byte
+
+const (
+	BlockInformationNone = iota
+	BlockInformationCave
+)
+
 type Chunk struct {
-	ID        uint64
-	Offset    mgl32.Vec2 // identifies the chunk position in world
-	BiomeType BiomeType
-	Blocks    [][][]*block.Block
+	ID                uint64
+	Offset            mgl32.Vec2 // identifies the chunk position in world
+	BiomeType         BiomeType
+	Blocks            [][][]*block.Block
+	BlocksInformation [][][]BlockInformation
 }
 
 func NewChunk(offset mgl32.Vec2, biomeType BiomeType) *Chunk {
@@ -37,16 +45,19 @@ func NewChunk(offset mgl32.Vec2, biomeType BiomeType) *Chunk {
 func (c *Chunk) allocateBlockSlice() {
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		c.Blocks = append(c.Blocks, [][]*block.Block{})
+		c.BlocksInformation = append(c.BlocksInformation, [][]BlockInformation{})
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			c.Blocks[x] = append(c.Blocks[x], []*block.Block{})
+			c.BlocksInformation[x] = append(c.BlocksInformation[x], []BlockInformation{})
 			for z := 0; z < int(configs.ChunkSize); z++ {
 				c.Blocks[x][y] = append(c.Blocks[x][y], nil)
+				c.BlocksInformation[x][y] = append(c.BlocksInformation[x][y], BlockInformationNone)
 			}
 		}
 	}
 }
 
-func (c *Chunk) SetInitialNeighbors() {
+func (c *Chunk) SetNeighbors() {
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight; y++ {
 			for z := 0; z < configs.ChunkSize; z++ {
@@ -60,7 +71,12 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
 
-					} else if c.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 0
+						}
+
+					} else if c.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].BlockType == block.BlockWater || c.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 0
 					} else {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
@@ -71,7 +87,12 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 1
 
-					} else if c.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 0
+						}
+
+					} else if c.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].BlockType == block.BlockWater || c.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 0
 
 					} else {
@@ -83,7 +104,12 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 1
 
-					} else if c.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 0
+						}
+
+					} else if c.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].BlockType == block.BlockWater || c.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 0
 
 					} else {
@@ -95,7 +121,12 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 1
 
-					} else if c.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 0
+						}
+
+					} else if c.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].BlockType == block.BlockWater || c.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 0
 
 					} else {
@@ -107,7 +138,17 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 1
 
-					} else if c.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 0
+						}
+
+						// If the water block has a water block above it then it should not be scaled down
+						if c.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == block.BlockWater {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].HasWaterAbove = true
+						}
+
+					} else if c.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == block.BlockWater || c.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 0
 
 					} else {
@@ -119,7 +160,12 @@ func (c *Chunk) SetInitialNeighbors() {
 					if c.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 1
 
-					} else if c.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].BlockType == block.BlockWater {
+						// handle weak water neighbors
+						if c.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].WaterForce != 8 {
+							c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 0
+						}
+
+					} else if c.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].BlockType == block.BlockWater || c.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].BlockType == block.BlockAir {
 						c.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 0
 
 					} else {
@@ -143,8 +189,8 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 			blockWithOffsetX := float64((x + (configs.ChunkSize * int(c.Offset[0]))))
 			blockWithOffsetZ := float64((z + (configs.ChunkSize * int(c.Offset[1]))))
 
-			normalizingQuotientX := float64(configs.BiomeChunks * configs.ChunkSize)
-			normalizingQuotientZ := float64(configs.BiomeChunks * configs.ChunkSize)
+			normalizingQuotientX := float64(configs.ChunkSmoothness * configs.ChunkSize)
+			normalizingQuotientZ := float64(configs.ChunkSmoothness * configs.ChunkSize)
 
 			noiseParamX := blockWithOffsetX / normalizingQuotientX
 			noiseParamZ := blockWithOffsetZ / normalizingQuotientZ
@@ -163,12 +209,43 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			for z := 0; z < int(configs.ChunkSize); z++ {
+<<<<<<< HEAD
 				if y < 32 && c.Blocks[x][y][z] == nil {
 
 					for index := y; index > 1; index-- {
 
 						if c.Blocks[x][index][z] == nil {
 							//fmt.Println("gerando agua")
+=======
+				blockWithOffsetX := float64((x + (configs.ChunkSize * int(c.Offset[0]))))
+				blockWithOffsetZ := float64((z + (configs.ChunkSize * int(c.Offset[1]))))
+
+				normalizingQuotientX := float64(configs.ChunkSmoothness)
+				normalizingQuotientY := float64(configs.ChunkSmoothness)
+				normalizingQuotientZ := float64(configs.ChunkSmoothness)
+
+				noiseParamX := blockWithOffsetX / normalizingQuotientX
+				noiseParamY := float64(y) / normalizingQuotientY
+				noiseParamZ := blockWithOffsetZ / normalizingQuotientZ
+
+				noise := noiseSource.Get3D(noiseParamX, noiseParamY, noiseParamZ)
+				if noise >= float64(configs.CaveThreshold) && y < configs.CaveMinHeight && y != 0 && c.Blocks[x][y][z] != nil && c.Blocks[x][y][z].BlockType != block.BlockWater {
+					c.Blocks[x][y][z] = nil
+					c.BlocksInformation[x][y][z] = BlockInformationCave
+				}
+			}
+		}
+	}
+
+	for x := 0; x < int(configs.ChunkSize); x++ {
+		for y := 0; y < int(configs.WorldHeight); y++ {
+			for z := 0; z < int(configs.ChunkSize); z++ {
+				if y < 32 && c.Blocks[x][y][z] == nil {
+
+					for index := y; index > 1 && c.BlocksInformation[x][y][z] != BlockInformationCave; index-- {
+
+						if c.Blocks[x][index][z] == nil {
+>>>>>>> 7828c351f6d96f3c5c97094528054708060933fa
 							waterBlock := block.NewBlock(float32(x)+(float32(configs.ChunkSize)*c.Offset[0]), float32(index), float32(z)+(float32(configs.ChunkSize)*c.Offset[1]), float32(configs.BlockSize), false, false, block.BlockWater)
 							c.Blocks[x][index][z] = &waterBlock
 							if index <= 1 {
@@ -183,7 +260,48 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
-	c.SetInitialNeighbors()
+	for x := 0; x < configs.ChunkSize; x++ {
+		for y := 0; y < configs.WorldHeight-1; y++ {
+			for z := 0; z < configs.ChunkSize; z++ {
+				currentBlock := c.Blocks[x][y][z]
+				if currentBlock != nil {
+
+					shouldPlaceGrass := true
+
+					if currentBlock.BlockType != block.BlockWater {
+						for height := y + 1; height < configs.WorldHeight; height++ {
+							if c.Blocks[x][height][z] != nil || c.BlocksInformation[x][height][z] == BlockInformationCave {
+								shouldPlaceGrass = false
+								if c.BlocksInformation[x][height][z] == BlockInformationCave {
+									if noiseSource.Get3D(float64(x), float64(y), float64(z)) >= 0.35 {
+										currentBlock.BlockType = block.BlockDirt
+									}
+								}
+								break
+							}
+						}
+
+						if shouldPlaceGrass {
+							currentBlock.BlockType = block.BlockGrass
+						}
+
+					}
+				}
+			}
+		}
+	}
+
+	c.SetNeighbors()
+}
+
+func (c *Chunk) GetBlockAtNotOffsetted(x, y, z int) *block.Block {
+	_x := x
+	_z := z
+	if _x < 0 || _x >= configs.ChunkSize || y < 0 || y >= configs.WorldHeight || _z < 0 || _z >= configs.ChunkSize {
+		return nil
+	}
+
+	return c.Blocks[_x][y][_z]
 }
 
 func (c *Chunk) GetBlockAt(x, y, z int) *block.Block {
@@ -194,6 +312,16 @@ func (c *Chunk) GetBlockAt(x, y, z int) *block.Block {
 	}
 
 	return c.Blocks[_x][y][_z]
+}
+
+func (c *Chunk) GetBlockInformationAt(x, y, z int) BlockInformation {
+	_x := x - (int(c.Offset[0] * float32(configs.ChunkSize)))
+	_z := z - (int(c.Offset[1] * float32(configs.ChunkSize)))
+	if _x < 0 || _x >= configs.ChunkSize || y < 0 || y >= configs.WorldHeight || _z < 0 || _z >= configs.ChunkSize {
+		return BlockInformationNone
+	}
+
+	return c.BlocksInformation[_x][y][_z]
 }
 
 func (c Chunk) FindPlacementPosition(hitAt mgl32.Vec4, nearFrom mgl32.Vec4, boundingBoxHighests, boundingBoxLowests mgl32.Vec3) *mgl32.Vec4 {
@@ -260,6 +388,8 @@ func (c *Chunk) RemoveBlockFrom(position mgl32.Vec4) {
 
 	lowerBlock := c.GetBlockAt(int(lowerNeighbor.X()), int(lowerNeighbor.Y()), int(lowerNeighbor.Z()))
 
+	offsettedX, _, offsettedZ := c.GetOffsettedPositions(position.X(), position.Y(), position.Z())
+
 	if northBlock != nil {
 		northBlock.Neighbors[1] = 0
 	}
@@ -277,9 +407,14 @@ func (c *Chunk) RemoveBlockFrom(position mgl32.Vec4) {
 	}
 	if lowerBlock != nil {
 		lowerBlock.Neighbors[4] = 0
+		if c.Blocks[int(offsettedX)][int(position.Y())][int(offsettedZ)].BlockType == block.BlockWater {
+			lowerBlock.HasWaterAbove = false
+		}
+
 	}
 
-	c.Blocks[int(position.X())][int(position.Y())][int(position.Z())] = nil
+	c.Blocks[int(offsettedX)][int(position.Y())][int(offsettedZ)] = nil
+	c.SetNeighbors()
 }
 
 func (c Chunk) GetOffsettedPositions(x, y, z float32) (float32, float32, float32) {
@@ -294,15 +429,29 @@ func (c *Chunk) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.
 	newBlock := block.NewBlock(x, float32(y), z, 1, true, ephemeral, blockType)
 	newBlock.WithEdges = false
 	c.Blocks[int(offsettedX)][int(y)][int(offsettedZ)] = &newBlock
+
+	c.SetNeighbors()
+}
+
+func (c *Chunk) AddBlockAtNotOffsetted(x, y, z int, block *block.Block) {
+	_x := x
+	_z := z
+	if _x < 0 || _x >= configs.ChunkSize || y < 0 || y >= configs.WorldHeight || _z < 0 || _z >= configs.ChunkSize {
+		return
+	}
+
+	c.Blocks[_x][y][_z] = block
+
+	c.SetNeighbors()
 }
 
 func (c *Chunk) GetBlocksToRender() []*block.Block {
 	blocksToRender := make([]*block.Block, 0)
 	for _, x := range c.Blocks {
 		for _, y := range x {
-			for _, block := range y {
-				if block != nil && block.CountNeighbors() != 6 {
-					blocksToRender = append(blocksToRender, block)
+			for _, currentBlock := range y {
+				if currentBlock != nil && currentBlock.CountNeighbors() != 6 && currentBlock.BlockType != block.BlockAir {
+					blocksToRender = append(blocksToRender, currentBlock)
 					continue
 				}
 
@@ -311,4 +460,71 @@ func (c *Chunk) GetBlocksToRender() []*block.Block {
 	}
 
 	return blocksToRender
+}
+
+func (c *Chunk) Update() {
+	for x := 0; x < configs.ChunkSize; x++ {
+		for y := 0; y < configs.WorldHeight; y++ {
+			for z := 0; z < configs.ChunkSize; z++ {
+				// handle water blocks
+				currentBlock := c.GetBlockAtNotOffsetted(x, y, z)
+				if currentBlock == nil || currentBlock.BlockType != block.BlockWater {
+					continue
+				}
+
+				if currentBlock != nil && currentBlock.BlockType == block.BlockWater && currentBlock.SpreadThisTick {
+					blockBelow := c.GetBlockAtNotOffsetted(x, y-1, z)
+					if blockBelow != nil && blockBelow.BlockType == block.BlockWater {
+						continue
+					}
+					if blockBelow == nil {
+						// if it does not have a block below
+						// then add a maximum-force water block
+						newWaterBlock := block.NewBlock(float32(x)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y-1), float32(z)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
+						newWaterBlock.SpreadThisTick = false
+						c.AddBlockAtNotOffsetted(x, y-1, z, &newWaterBlock)
+						continue
+					}
+
+					if currentBlock.WaterForce > 1 {
+						for dx := -1; dx <= 1; dx++ {
+							for dz := -1; dz <= 1; dz++ {
+								if (dx != 0 && dz != 0) || math.Abs(float64(dx)) != math.Abs(float64(dz)) {
+									currentVerifying := c.GetBlockAtNotOffsetted(x+dx, y, z+dz)
+									if currentVerifying == nil {
+										belowCurrentVeryfing := c.GetBlockAtNotOffsetted(x+dx, y-1, z+dz)
+										if belowCurrentVeryfing != nil && belowCurrentVeryfing.BlockType == block.BlockWater {
+											continue
+										}
+										newWaterBlock := block.NewBlock(float32(x+dx)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y), float32(z+dz)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
+										newWaterBlock.WaterForce = currentBlock.WaterForce - 1
+										newWaterBlock.SpreadThisTick = false
+										c.AddBlockAtNotOffsetted(x+dx, y, z+dz, &newWaterBlock)
+									}
+								}
+							}
+						}
+					}
+
+				}
+
+				// end handle water blocks
+
+			}
+		}
+	}
+
+	go c.SetNeighbors()
+}
+
+func (c *Chunk) SetWatersUpdate() {
+	for x := 0; x < configs.ChunkSize; x++ {
+		for y := 0; y < configs.WorldHeight; y++ {
+			for z := 0; z < configs.ChunkSize; z++ {
+				if c.Blocks[x][y][z] != nil && c.Blocks[x][y][z].BlockType == block.BlockWater {
+					c.Blocks[x][y][z].SpreadThisTick = true
+				}
+			}
+		}
+	}
 }

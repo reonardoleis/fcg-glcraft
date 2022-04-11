@@ -106,8 +106,6 @@ func main() {
 	for !window.ShouldClose() {
 		start = glfw.GetTime()
 
-		gl.ClearColor(0, 1.0, 0.9, 1.0)
-
 		if controlHandler.IsDown(int(glfw.KeyEnter)) {
 			if sceneManager.ActiveScene == 0 {
 				sceneManager.SetActiveScene(1)

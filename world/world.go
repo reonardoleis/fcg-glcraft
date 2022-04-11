@@ -25,7 +25,7 @@ type World struct {
 	ShouldUpdatePopulatedBlocks bool
 	Seed                        int64
 	Time                        int64
-	Tick                        uint
+	Tick                        float64
 	GlobalNoise                 *noisey.OpenSimplexGenerator
 }
 
@@ -330,11 +330,21 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 
 	for i := currentChunk.Offset[0] - configs.ViewDistance; i <= currentChunk.Offset[0]+configs.ViewDistance; i++ {
 		for j := currentChunk.Offset[1] - configs.ViewDistance; j <= currentChunk.Offset[1]+configs.ViewDistance; j++ {
+			if w.Tick >= configs.TickRate {
+				go w.Chunks[int(i)][int(j)].Update()
+				go w.Chunks[int(i)][int(j)].SetWatersUpdate()
+			}
 			chunkRenderableBlocks := w.Chunks[int(i)][int(j)].GetBlocksToRender()
 			for _, renderableBlock := range chunkRenderableBlocks {
 				renderableBlock.Draw2()
 			}
 		}
 	}
+
+	if w.Tick >= configs.TickRate {
+		w.Tick = 0
+	}
+
+	w.Tick += math2.DeltaTime
 
 }

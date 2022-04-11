@@ -294,6 +294,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 			chunkRenderableBlocks := w.Chunks[int(i)][int(j)].GetBlocksToRender()
 			for _, renderableBlock := range chunkRenderableBlocks {
 				renderableBlock.Draw2()
+				renderableBlock.Colliding = false
 			}
 		}
 	}

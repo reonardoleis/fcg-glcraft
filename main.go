@@ -90,7 +90,7 @@ func main() {
 	controlHandler.StartKeyHandlers()
 
 	camera1 := camera.NewCamera(mgl32.Vec4{0.0, 0.0, 0.0, 1.0}, controlHandler, math.Pi/3, camera.FirstPersonCamera)
-	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 5, 2.0, configs.JumpHeight, 10, 2)
+	player1 := player.NewPlayer(mgl32.Vec4{0.0, 128, 0.0, 1.0}, controlHandler, 5, 2.0, configs.JumpHeight, configs.Jumpforce, 2)
 	player1.BeFollowedByCamera(camera1)
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 

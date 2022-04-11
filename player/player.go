@@ -122,11 +122,13 @@ func (p *Player) Jump() {
 	p._isJumping = true
 }
 
-func (p *Player) HandleJump() {
-	p.SetPosition(mgl32.Vec4{p.Position.X(), p.Position.Y() + p.JumpSpeed*float32(math2.DeltaTime), p.Position.Z(), 1.0})
-	if p.Position.Y()-p._originalY >= p.JumpHeight {
+func (p *Player) HandleJump() mgl32.Vec4 {
+	if p.Position.Y()-p._originalY >= 1 {
 		p._isJumping = false
+		return p.Position
 	}
+	return (mgl32.Vec4{p.Position.X(), p.Position.Y() + p.JumpSpeed*float32(math2.DeltaTime), p.Position.Z(), 1.0})
+
 }
 
 func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY int, roundedNewPositionZ int, futureBoundingBox collisions.CubeBoundingBox, world *world.World) (collidesSides, collidesBelow, collidesAbove bool) {
@@ -160,11 +162,12 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 					//fmt.Println("Maximos: ", blockBoundingBox.Maxes, " Minimos: ", blockBoundingBox.Mins)
 					//fmt.Println("Maximos: ", futureBoundingBox.Maxes, " Minimos: ", futureBoundingBox.Mins)
 					collidesBelow = true
-					//blocks[x][y][z].Colliding = true
+					blockToVerify.Colliding = true
 					continue
 				}
 
 				if p.Collider.Collides(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
+					blockToVerify.Colliding = true
 
 					if y == roundedNewPositionY+1 {
 
@@ -202,6 +205,11 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 	}
 
+	if p.IsJumping() {
+		positionAfterJump := p.HandleJump()
+		newPosition = mgl32.Vec4{newPosition.X(), positionAfterJump.Y(), newPosition.Z(), 1.0}
+	}
+
 	bb := p.UpdateBoundingBox(newPosition)
 
 	roundedNewPositionX := int(math.Round(float64(newPosition.X())))
@@ -209,6 +217,13 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
 
 	_, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
+		p.Jump()
+	}
+
+	if collidesAbove {
+		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
+	}
 
 	//wneg := w.Mul(-1)
 	if p.ControlHandler.IsDown(int(glfw.KeyW)) {
@@ -393,7 +408,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	}
 	if collidedBelow {
 
-		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
+		newPosition = newPosition.Add(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
 
 	}
 
@@ -475,14 +490,6 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		p._isJumping = false
 	}
 
-	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
-		p.Jump()
-	}
-
-	if p.IsJumping() {
-		p.HandleJump()
-	}
-
 	p.HandleWorldLimits(world)
 
 	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 0.0}))
@@ -494,22 +501,22 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 }
 
 func (p *Player) UpdateBoundingBox(newPosition mgl32.Vec4) collisions.CubeBoundingBox {
-	r := 0.3
-	Ax := r*math.Cos(p.PlayerTheta-math.Pi/4) + float64(newPosition.X())
-	Az := r*math.Sin(-p.PlayerTheta+math.Pi/4) + float64(newPosition.Z())
-	Bx := r*math.Cos(p.PlayerTheta-math.Pi*3/4) + float64(newPosition.X())
-	Bz := r*math.Sin(-p.PlayerTheta+math.Pi*3/4) + float64(newPosition.Z())
-	Cx := r*math.Cos(p.PlayerTheta-math.Pi*5/4) + float64(newPosition.X())
-	Cz := r*math.Sin(-p.PlayerTheta+math.Pi*5/4) + float64(newPosition.Z())
-	Dx := r*math.Cos(p.PlayerTheta-math.Pi*7/4) + float64(newPosition.X())
-	Dz := r*math.Sin(-p.PlayerTheta+math.Pi*7/4) + float64(newPosition.Z())
+	//r := 0.3
+	Ax := newPosition.X() + 0.3
+	Az := newPosition.Z() + 0.3
+	Bx := newPosition.X() + 0.3
+	Bz := newPosition.Z() - 0.3
+	Cx := newPosition.X() - 0.3
+	Cz := newPosition.Z() - 0.3
+	Dx := newPosition.X() - 0.3
+	Dz := newPosition.Z() + 0.3
 
-	minx := math.Min(Ax, math.Min(Bx, math.Min(Cx, Dx)))
-	minz := math.Min(Az, math.Min(Bz, math.Min(Cz, Dz)))
-	maxx := math.Max(Ax, math.Max(Bx, math.Max(Cx, Dx)))
-	maxz := math.Max(Az, math.Max(Bz, math.Max(Cz, Dz)))
-	miny := newPosition.Y() - 1.0
-	maxy := newPosition.Y() + 0.8
+	minx := math.Min(float64(Ax), math.Min(float64(Bx), math.Min(float64(Cx), float64(Dx))))
+	minz := math.Min(float64(Az), math.Min(float64(Bz), math.Min(float64(Cz), float64(Dz))))
+	maxx := math.Max(float64(Ax), math.Max(float64(Bx), math.Max(float64(Cx), float64(Dx))))
+	maxz := math.Max(float64(Az), math.Max(float64(Bz), math.Max(float64(Cz), float64(Dz))))
+	miny := newPosition.Y() - configs.BoundingBoxMinY
+	maxy := newPosition.Y() + configs.BoundingBoxMaxY
 
 	p.BoundingBoxFutureVertices[0] = mgl32.Vec3{float32(Ax), miny, float32(Az)}
 	p.BoundingBoxFutureVertices[1] = mgl32.Vec3{float32(Bx), miny, float32(Bz)}

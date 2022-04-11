@@ -32,6 +32,7 @@ const (
 	BlockStone
 	BlockWater
 	BlockGlass
+	BlockAir
 )
 
 var (
@@ -73,6 +74,10 @@ type Block struct {
 	Neighbors [6]byte
 
 	Colliding bool
+
+	WaterForce     byte // force of the water [8 - 1]
+	HasWaterAbove  bool
+	SpreadThisTick bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -158,7 +163,8 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 		// ModelGeometry: modelGeometry,
 		WithEdges: false,
 		// EdgesGeometry: edgesGeometry,
-		BlockType: blockType,
+		BlockType:  blockType,
+		WaterForce: 8,
 	}
 }
 
@@ -247,11 +253,6 @@ func (b Block) Draw2() {
 	lower := math2.Lower(b.Position, float32(configs.BlockSize))
 	faces := []mgl32.Vec4{north, south, east, west, upper, lower}
 
-	diff := 0.0
-	if b.BlockType == BlockWater {
-		diff = 0.2
-	}
-
 	gl.BindVertexArray(geometry.Faces[0].VaoID)
 	gl.Uniform1i(black, 0)
 	for index, face := range faces {
@@ -268,7 +269,24 @@ func (b Block) Draw2() {
 				gl.BindTexture(gl.TEXTURE_2D, redTexture)
 			}
 
-			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(diff), face.Z())).Mul4(rotations[index])
+			faceMat := math2.Matrix_Identity()
+
+			yDiff := float32(0.0)
+
+			if b.BlockType == BlockWater && index < 5 && b.Neighbors[4] == 0 && !b.HasWaterAbove {
+				yDiff = 1 - ((float32(b.WaterForce) / 8) * 0.8)
+				if index < 4 {
+					yDiff *= 0.5
+				}
+			}
+
+			faceMat = faceMat.Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(yDiff), face.Z())).Mul4(rotations[index])
+
+			if b.BlockType == BlockWater && b.Neighbors[4] == 0 && !b.HasWaterAbove {
+				if index < 4 {
+					faceMat = faceMat.Mul4(math2.Matrix_Scale(1.0, (float32(b.WaterForce)/8)*0.8, 1.0))
+				}
+			}
 
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
 

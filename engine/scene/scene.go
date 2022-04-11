@@ -15,6 +15,7 @@ import (
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
 	"github.com/reonardoleis/fcg-glcraft/world"
+	"github.com/reonardoleis/fcg-glcraft/world/chunk"
 )
 
 type SceneType = uint
@@ -68,6 +69,17 @@ func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Play
 
 func (s *Scene) Update(window glfw.Window) {
 
+	cx, cz := s.Player.GetChunkOffset().Elem()
+	//fmt.Println("Estou no chunk ", cx, cz)
+
+	currentChunk := s.World.Chunks[int(cx)][int(cz)]
+
+	if currentChunk.GetBlockInformationAt(int(s.Player.Position.X()), int(s.Player.Position.Y()), int(s.Player.Position.Z())) == chunk.BlockInformationCave {
+		gl.ClearColor(0, 0.0, 0.0, 1.0)
+	} else {
+		gl.ClearColor(0, 1.0, 0.9, 1.0)
+	}
+
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	gl.UseProgram(shaders.ShaderProgramCrosshair)
@@ -80,11 +92,6 @@ func (s *Scene) Update(window glfw.Window) {
 		s.World.Chunks = s.World.FutureChunks
 		s.World.ShouldUpdateChunks = false
 	}
-
-	cx, cz := s.Player.GetChunkOffset().Elem()
-	//fmt.Println("Estou no chunk ", cx, cz)
-
-	currentChunk := s.World.Chunks[int(cx)][int(cz)]
 
 	if currentChunk.ID != s.Player.LastChunk {
 		s.World.FutureChunks = s.World.Chunks

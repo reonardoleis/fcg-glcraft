@@ -2,6 +2,8 @@ package chunk
 
 import (
 	"math"
+	"math/rand"
+	"time"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
@@ -252,6 +254,8 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
+	r := rand.New(rand.NewSource(time.Now().Unix() + int64(c.ID)))
+	noiser := noisey.NewOpenSimplexGenerator(r)
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight-1; y++ {
 			for z := 0; z < configs.ChunkSize; z++ {
@@ -260,14 +264,24 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 
 					shouldPlaceGrass := true
 
+					// surface-grass handling & ore generation
 					if currentBlock.BlockType != block.BlockWater {
 						for height := y + 1; height < configs.WorldHeight; height++ {
 							if c.Blocks[x][height][z] != nil || c.BlocksInformation[x][height][z] == BlockInformationCave {
 								shouldPlaceGrass = false
 								if c.BlocksInformation[x][height][z] == BlockInformationCave {
-									if noiseSource.Get3D(float64(x), float64(y), float64(z)) >= 0.35 {
+									if noiser.Get3D(float64(x), float64(y), float64(z)) >= float64(configs.CaveDirtThreshold) {
 										currentBlock.BlockType = block.BlockDirt
 									}
+
+									if noiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness)) >= float64(configs.CaveCoalThreshold) {
+										currentBlock.BlockType = block.BlockCoal
+									}
+
+								}
+
+								if y < 50 && noiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness)) >= float64(configs.CaveIronThreshold) {
+									currentBlock.BlockType = block.BlockIron
 								}
 								break
 							}

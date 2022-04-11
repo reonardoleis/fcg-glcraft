@@ -33,6 +33,8 @@ const (
 	BlockWater
 	BlockGlass
 	BlockAir
+	BlockCoal
+	BlockIron
 )
 
 var (
@@ -50,6 +52,8 @@ var (
 	numTexturesLoaded        = 0
 	model_uniform     int32
 	redTexture        uint32 = 0
+	coalTexture       uint32 = 0
+	ironTexture       uint32 = 0
 	black             int32
 	lastTexture       uint32 = 0
 	northRotation            = math2.Matrix_Rotate_Y((math.Pi / 180) * 90)
@@ -111,6 +115,10 @@ func getBlockTexture(blockType BlockType) []uint32 {
 		return []uint32{sandTexture, sandTexture, sandTexture, sandTexture, sandTexture, sandTexture}
 	case BlockGlass:
 		return []uint32{glassTexture, glassTexture, glassTexture, glassTexture, glassTexture, glassTexture}
+	case BlockIron:
+		return []uint32{ironTexture, ironTexture, ironTexture, ironTexture, ironTexture, ironTexture}
+	case BlockCoal:
+		return []uint32{coalTexture, coalTexture, coalTexture, coalTexture, coalTexture, coalTexture}
 	}
 
 	return []uint32{grassSideTexture, grassSideTexture, grassSideTexture, grassSideTexture, grassTopTexture, dirtTexture}
@@ -146,6 +154,9 @@ func InitBlock() {
 	sandTexture = newTexture("sand_0.png")
 	redTexture = newTexture("red_0.png")
 	glassTexture = newTexture("glass_0.png")
+	coalTexture = newTexture("coal_0.png")
+	ironTexture = newTexture("iron_0.png")
+
 	model_uniform = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
 	black = gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("black\000"))         // Variável da matriz "model"
 

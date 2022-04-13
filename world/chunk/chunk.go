@@ -3,7 +3,6 @@ package chunk
 import (
 	"math"
 	"math/rand"
-	"time"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
@@ -254,8 +253,10 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
-	r := rand.New(rand.NewSource(time.Now().Unix() + int64(c.ID)))
-	noiser := noisey.NewOpenSimplexGenerator(r)
+	r1 := rand.New(rand.NewSource(int64(math2.RandInt(0, 1000000000000000))))
+	r2 := rand.New(rand.NewSource(int64(math2.RandInt(0, 1000000000000000))))
+	coalNoiser := noisey.NewOpenSimplexGenerator(r1)
+	ironNoiser := noisey.NewOpenSimplexGenerator(r2)
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight-1; y++ {
 			for z := 0; z < configs.ChunkSize; z++ {
@@ -270,17 +271,18 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 							if c.Blocks[x][height][z] != nil || c.BlocksInformation[x][height][z] == BlockInformationCave {
 								shouldPlaceGrass = false
 								if c.BlocksInformation[x][height][z] == BlockInformationCave {
-									if noiser.Get3D(float64(x), float64(y), float64(z)) >= float64(configs.CaveDirtThreshold) {
+									if noiseSource.Get3D(float64(x), float64(y), float64(z)) >= float64(configs.CaveDirtThreshold) {
 										currentBlock.BlockType = block.BlockDirt
-									}
-
-									if noiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness)) >= float64(configs.CaveCoalThreshold) {
-										currentBlock.BlockType = block.BlockCoal
 									}
 
 								}
 
-								if y < 50 && noiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness)) >= float64(configs.CaveIronThreshold) {
+								coalNoise := coalNoiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness))
+								ironNoise := ironNoiser.Get3D(float64(x)/float64(configs.CaveContentSmoothness), float64(y), float64(z)/float64(configs.CaveContentSmoothness))
+								if y < 50 && coalNoise >= configs.CaveCoalThreshold[0] && coalNoise <= configs.CaveCoalThreshold[1] {
+									currentBlock.BlockType = block.BlockCoal
+								}
+								if y < 40 && ironNoise >= configs.CaveIronThreshold[0] && ironNoise <= configs.CaveIronThreshold[1] {
 									currentBlock.BlockType = block.BlockIron
 								}
 								break
@@ -419,8 +421,10 @@ func (c *Chunk) RemoveBlockFrom(position mgl32.Vec4) {
 
 	}
 
-	c.Blocks[int(offsettedX)][int(position.Y())][int(offsettedZ)] = nil
-	c.SetNeighbors()
+	if c.Blocks[int(offsettedX)][int(position.Y())][int(offsettedZ)].IsBreakable {
+		c.Blocks[int(offsettedX)][int(position.Y())][int(offsettedZ)] = nil
+		c.SetNeighbors()
+	}
 }
 
 func (c Chunk) GetOffsettedPositions(x, y, z float32) (float32, float32, float32) {
@@ -472,46 +476,80 @@ func (c *Chunk) Update() {
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight; y++ {
 			for z := 0; z < configs.ChunkSize; z++ {
-				// handle water blocks
+
 				currentBlock := c.GetBlockAtNotOffsetted(x, y, z)
-				if currentBlock == nil || currentBlock.BlockType != block.BlockWater {
+
+				if currentBlock == nil {
 					continue
 				}
 
-				if currentBlock != nil && currentBlock.BlockType == block.BlockWater && currentBlock.SpreadThisTick {
+				// handle sand & gravel blocks
+				if currentBlock.BlockType == block.BlockSand && !currentBlock.IsFalling {
 					blockBelow := c.GetBlockAtNotOffsetted(x, y-1, z)
-					if blockBelow != nil && blockBelow.BlockType == block.BlockWater {
-						continue
-					}
 					if blockBelow == nil {
-						// if it does not have a block below
-						// then add a maximum-force water block
-						newWaterBlock := block.NewBlock(float32(x)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y-1), float32(z)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
-						newWaterBlock.SpreadThisTick = false
-						c.AddBlockAtNotOffsetted(x, y-1, z, &newWaterBlock)
-						continue
+						currentBlock.IsFalling = true
+						currentBlock.IsBreakable = false
+					}
+				}
+
+				if currentBlock.BlockType == block.BlockSand && currentBlock.IsFalling {
+					blockBelow := c.GetBlockAtNotOffsetted(x, y-1, z)
+					if blockBelow == nil {
+						currentBlock.Position = currentBlock.Position.Sub(mgl32.Vec4{0.0, configs.BlockFallingSpeed * float32(math2.DeltaTime), 0.0, 1.0})
 					}
 
-					if currentBlock.WaterForce > 1 {
-						for dx := -1; dx <= 1; dx++ {
-							for dz := -1; dz <= 1; dz++ {
-								if (dx != 0 && dz != 0) || math.Abs(float64(dx)) != math.Abs(float64(dz)) {
-									currentVerifying := c.GetBlockAtNotOffsetted(x+dx, y, z+dz)
-									if currentVerifying == nil {
-										belowCurrentVeryfing := c.GetBlockAtNotOffsetted(x+dx, y-1, z+dz)
-										if belowCurrentVeryfing != nil && belowCurrentVeryfing.BlockType == block.BlockWater {
-											continue
+					currentWorldPositionY := math.Ceil(float64(currentBlock.Position.Y()))
+					blockBelow2 := c.GetBlockAtNotOffsetted(x, int(currentWorldPositionY-1), z)
+					if blockBelow2 != nil {
+						copy := *currentBlock
+						copy.IsBreakable = true
+						copy.IsFalling = false
+						copy.Position = mgl32.Vec4{float32(x), blockBelow2.Position.Y() + 1, float32(z), 1.0}
+						c.Blocks[x][y][z] = nil
+						c.Blocks[x][int(blockBelow2.Position.Y()+1)][z] = &copy
+						c.SetNeighbors()
+					}
+				}
+
+				// end handle sand & gravel blocks
+
+				// handle water blocks
+				if currentBlock.BlockType == block.BlockWater {
+					if currentBlock != nil && currentBlock.BlockType == block.BlockWater && currentBlock.SpreadThisTick {
+						blockBelow := c.GetBlockAtNotOffsetted(x, y-1, z)
+						if blockBelow != nil && blockBelow.BlockType == block.BlockWater {
+							continue
+						}
+						if blockBelow == nil {
+							// if it does not have a block below
+							// then add a maximum-force water block
+							newWaterBlock := block.NewBlock(float32(x)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y-1), float32(z)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
+							newWaterBlock.SpreadThisTick = false
+							c.AddBlockAtNotOffsetted(x, y-1, z, &newWaterBlock)
+							continue
+						}
+
+						if currentBlock.WaterForce > 1 {
+							for dx := -1; dx <= 1; dx++ {
+								for dz := -1; dz <= 1; dz++ {
+									if (dx != 0 && dz != 0) || math.Abs(float64(dx)) != math.Abs(float64(dz)) {
+										currentVerifying := c.GetBlockAtNotOffsetted(x+dx, y, z+dz)
+										if currentVerifying == nil {
+											belowCurrentVeryfing := c.GetBlockAtNotOffsetted(x+dx, y-1, z+dz)
+											if belowCurrentVeryfing != nil && belowCurrentVeryfing.BlockType == block.BlockWater {
+												continue
+											}
+											newWaterBlock := block.NewBlock(float32(x+dx)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y), float32(z+dz)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
+											newWaterBlock.WaterForce = currentBlock.WaterForce - 1
+											newWaterBlock.SpreadThisTick = false
+											c.AddBlockAtNotOffsetted(x+dx, y, z+dz, &newWaterBlock)
 										}
-										newWaterBlock := block.NewBlock(float32(x+dx)+(c.Offset[0]*float32(configs.ChunkSize)), float32(y), float32(z+dz)+(c.Offset[1]*float32(configs.ChunkSize)), float32(configs.BlockSize), false, false, block.BlockWater)
-										newWaterBlock.WaterForce = currentBlock.WaterForce - 1
-										newWaterBlock.SpreadThisTick = false
-										c.AddBlockAtNotOffsetted(x+dx, y, z+dz, &newWaterBlock)
 									}
 								}
 							}
 						}
-					}
 
+					}
 				}
 
 				// end handle water blocks
@@ -520,7 +558,7 @@ func (c *Chunk) Update() {
 		}
 	}
 
-	go c.SetNeighbors()
+	c.SetNeighbors()
 }
 
 func (c *Chunk) SetWatersUpdate() {

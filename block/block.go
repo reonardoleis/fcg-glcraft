@@ -82,6 +82,8 @@ type Block struct {
 	WaterForce     byte // force of the water [8 - 1]
 	HasWaterAbove  bool
 	SpreadThisTick bool
+	IsFalling      bool
+	IsBreakable    bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -174,8 +176,9 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 		// ModelGeometry: modelGeometry,
 		WithEdges: false,
 		// EdgesGeometry: edgesGeometry,
-		BlockType:  blockType,
-		WaterForce: 8,
+		BlockType:   blockType,
+		WaterForce:  8,
+		IsBreakable: true,
 	}
 }
 

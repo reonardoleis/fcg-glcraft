@@ -22,6 +22,7 @@ type World struct {
 	Chunks                      map[int]map[int]*chunk.Chunk
 	FutureChunks                map[int]map[int]*chunk.Chunk
 	ShouldUpdateChunks          bool
+	LockFutureChunks            bool
 	PopulatedBlocks             [][]*block.Block
 	ShouldUpdatePopulatedBlocks bool
 	Seed                        int64
@@ -41,6 +42,7 @@ func NewWorld(worldName string, size mgl32.Vec3, seed int64) *World {
 		GlobalNoise:        &noiser,
 		FutureChunks:       make(map[int]map[int]*chunk.Chunk),
 		ShouldUpdateChunks: false,
+		LockFutureChunks:   false,
 	}
 }
 
@@ -67,12 +69,17 @@ func (w World) FindHighestBlock(wx, wz int) *block.Block {
 	return highestBlock
 }
 
-func (w *World) HandleChunkChange(currentChunk *chunk.Chunk) {
-	for i := currentChunk.Offset[0] - 2; i <= currentChunk.Offset[0]+2; i++ {
+func (w *World) HandleChunkChange(offsetX, offsetZ int) {
+	for w.LockFutureChunks {
+
+	}
+
+	w.LockFutureChunks = true
+	for i := offsetX - 2; i <= offsetX+2; i++ {
 		if len(w.FutureChunks[int(i)]) == 0 {
 			w.FutureChunks[int(i)] = make(map[int]*chunk.Chunk)
 		}
-		for j := currentChunk.Offset[1] - 2; j <= currentChunk.Offset[1]+2; j++ {
+		for j := offsetZ - 2; j <= offsetZ+2; j++ {
 			if w.FutureChunks[int(i)][int(j)] == nil {
 				w.FutureChunks[int(i)][int(j)] = chunk.NewChunk(mgl32.Vec2{float32(i), float32(j)}, 0)
 				w.FutureChunks[int(i)][int(j)].GenerateChunk(w.GlobalNoise)
@@ -80,6 +87,9 @@ func (w *World) HandleChunkChange(currentChunk *chunk.Chunk) {
 
 		}
 	}
+
+	w.ShouldUpdateChunks = true
+	w.LockFutureChunks = false
 }
 
 func (w *World) GenerateWorld() {
@@ -288,9 +298,10 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	for i := currentChunk.Offset[0] - configs.ViewDistance; i <= currentChunk.Offset[0]+configs.ViewDistance; i++ {
 		for j := currentChunk.Offset[1] - configs.ViewDistance; j <= currentChunk.Offset[1]+configs.ViewDistance; j++ {
 			if w.Tick >= configs.TickRate {
-				go w.Chunks[int(i)][int(j)].Update()
-				go w.Chunks[int(i)][int(j)].SetWatersUpdate()
+				w.Chunks[int(i)][int(j)].Update()
+				w.Chunks[int(i)][int(j)].SetWatersUpdate()
 			}
+			w.Chunks[int(i)][int(j)].SetNeighbors()
 			chunkRenderableBlocks := w.Chunks[int(i)][int(j)].GetBlocksToRender()
 			for _, renderableBlock := range chunkRenderableBlocks {
 				renderableBlock.Draw2()

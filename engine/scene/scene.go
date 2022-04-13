@@ -70,7 +70,6 @@ func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Play
 func (s *Scene) Update(window glfw.Window) {
 
 	cx, cz := s.Player.GetChunkOffset().Elem()
-	fmt.Println("Estou no chunk ", cx, cz)
 
 	currentChunk := s.World.Chunks[int(cx)][int(cz)]
 
@@ -88,17 +87,10 @@ func (s *Scene) Update(window glfw.Window) {
 
 	gl.UseProgram(shaders.ShaderProgramDefault)
 
-	if s.World.ShouldUpdateChunks {
-		s.World.Chunks = s.World.FutureChunks
-		s.World.ShouldUpdateChunks = false
-	}
-
 	if currentChunk.ID != s.Player.LastChunk {
 		s.World.FutureChunks = s.World.Chunks
-		go s.World.HandleChunkChange(currentChunk)
+		go s.World.HandleChunkChange(int(currentChunk.Offset[0]), int(currentChunk.Offset[1]))
 	}
-
-	s.Player.Update(s.World, s.World.Chunks[int(cx)][int(cz)])
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()
 	realPlayerX, realPlayerY, realPlayerZ := s.Player.GetRealPosition()
@@ -113,7 +105,7 @@ func (s *Scene) Update(window glfw.Window) {
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
 
 	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer, currentChunk)
-
+	s.Player.Update(s.World, s.World.Chunks[int(cx)][int(cz)])
 	/*window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 	roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))*/
 	gl.BindVertexArray(0)
@@ -123,4 +115,9 @@ func (s *Scene) Update(window glfw.Window) {
 	s.ControlHandler.FinishMousePositionChanged()
 	window.SwapBuffers()
 	glfw.PollEvents()
+
+	if s.World.ShouldUpdateChunks {
+		s.World.Chunks = s.World.FutureChunks
+		s.World.ShouldUpdateChunks = false
+	}
 }

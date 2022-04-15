@@ -117,20 +117,6 @@ func (p Player) GetMovementVector() (w, u mgl32.Vec4) {
 	return w, u
 }
 
-func (p *Player) Jump() {
-	p._originalY = p.Position.Y()
-	p._isJumping = true
-}
-
-func (p *Player) HandleJump() mgl32.Vec4 {
-	if p.Position.Y()-p._originalY >= 1 {
-		p._isJumping = false
-		return p.Position
-	}
-	return (mgl32.Vec4{p.Position.X(), p.Position.Y() + p.JumpSpeed*float32(math2.DeltaTime), p.Position.Z(), 1.0})
-
-}
-
 func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY int, roundedNewPositionZ int, futureBoundingBox collisions.CubeBoundingBox, world *world.World) (collidesSides, collidesBelow, collidesAbove bool) {
 	//fmt.Println("Checando colisoes no chunk ", chunk.ID)
 	//fmt.Println(futureBoundingBox)
@@ -195,65 +181,77 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	p.HandleLookDirection()
 
-	w, u := p.GetMovementVector()
+	var bb collisions.CubeBoundingBox
+	var roundedNewPositionX int
+	var roundedNewPositionY int
+	var roundedNewPositionZ int
+	var collidedBelow bool
+	deltaTime := float32(math2.DeltaTime)
 
+	w, u := p.GetMovementVector()
+	//fmt.Println(math2.DeltaTime)
 	newPosition := p.Position
 
 	if !p._isJumping {
-		//fmt.Println("Caindo....")
-		newPosition = newPosition.Sub(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
+		if math2.GravityAccel >= deltaTime {
+			for i := deltaTime; i < math2.GravityAccel*deltaTime; i += deltaTime {
+				newPosition = newPosition.Sub(mgl32.Vec4{0.0, deltaTime, 0.0, 0.0})
 
+				bb := p.UpdateBoundingBox(newPosition)
+
+				roundedNewPositionX := int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
+
+				_, collidedBelow, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+				if collidedBelow {
+
+					break
+				}
+
+			}
+		}
+
+	}
+
+	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
+		p._originalY = newPosition.Y()
+		p._isJumping = true
 	}
 
 	if p.IsJumping() {
-		positionAfterJump := p.HandleJump()
-		newPosition = mgl32.Vec4{newPosition.X(), positionAfterJump.Y(), newPosition.Z(), 1.0}
-	}
+		if p.JumpSpeed >= deltaTime {
+			for i := deltaTime; i < p.JumpSpeed*deltaTime; i += deltaTime {
+				if newPosition.Y()-p._originalY >= 1 {
+					p._isJumping = false
+					break
+				}
+				newPosition = mgl32.Vec4{newPosition.X(), newPosition.Y() + deltaTime, newPosition.Z(), 1.0}
 
-	bb := p.UpdateBoundingBox(newPosition)
+				bb := p.UpdateBoundingBox(newPosition)
 
-	roundedNewPositionX := int(math.Round(float64(newPosition.X())))
-	roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
-	roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
+				roundedNewPositionX := int(math.Round(float64(newPosition.X())))
+				roundedNewPositionY := int(math.Round(float64(newPosition.Y())))
+				roundedNewPositionZ := int(math.Round(float64(newPosition.Z())))
 
-	_, collidedBelow, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-	if p.ControlHandler.IsDown(int(glfw.KeySpace)) && !p.IsJumping() && collidedBelow {
-		p.Jump()
-	}
+				_, _, collidesAbove := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
-	if collidesAbove {
-		newPosition = mgl32.Vec4{newPosition.X(), p.Position.Y(), newPosition.Z(), 1.0}
+				if collidesAbove {
+					newPosition = mgl32.Vec4{newPosition.X(), newPosition.Y() - deltaTime, newPosition.Z(), 1.0}
+
+					p._isJumping = false
+					break
+				}
+			}
+		}
 	}
 
 	//wneg := w.Mul(-1)
 	if p.ControlHandler.IsDown(int(glfw.KeyW)) {
-		newPosition = newPosition.Add(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-		bb = p.UpdateBoundingBox(newPosition)
-
-		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-		if collided {
-			newPosition = newPosition.Sub(w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-			newPosition = newPosition.Add(mgl32.Vec4{w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-			bb = p.UpdateBoundingBox(newPosition)
-
-			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-			if collided {
-				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+		if p.WalkingSpeed >= deltaTime {
+			for i := deltaTime; i < p.WalkingSpeed*deltaTime; i += deltaTime {
+				newPosition = newPosition.Add(w.Mul(-1).Mul(deltaTime))
 
 				bb = p.UpdateBoundingBox(newPosition)
 
@@ -261,44 +259,48 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+				collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
-					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+					newPosition = newPosition.Sub(w.Mul(-1).Mul(deltaTime))
+
+					newPosition = newPosition.Add(mgl32.Vec4{w.Mul(-1).Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+					bb = p.UpdateBoundingBox(newPosition)
+
+					roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+					roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+					roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+					collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+					if collided {
+						newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(-1).Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+						newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(deltaTime).Z(), 0.0})
+
+						bb = p.UpdateBoundingBox(newPosition)
+
+						roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+						roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+						roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+						collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+						if collided {
+							newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(-1).Mul(deltaTime).Z(), 0.0})
+							break
+						}
+					}
+
 				}
 			}
-
 		}
-
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyS)) {
-		newPosition = newPosition.Add(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-		bb = p.UpdateBoundingBox(newPosition)
-
-		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-		if collided {
-			newPosition = newPosition.Sub(w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-			newPosition = newPosition.Add(mgl32.Vec4{w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-			bb = p.UpdateBoundingBox(newPosition)
-
-			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-			if collided {
-				newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+		if p.WalkingSpeed >= deltaTime {
+			for i := deltaTime; i < p.WalkingSpeed*deltaTime; i += deltaTime {
+				newPosition = newPosition.Add(w.Mul(deltaTime))
 
 				bb = p.UpdateBoundingBox(newPosition)
 
@@ -306,44 +308,49 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+				collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
-					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+					newPosition = newPosition.Sub(w.Mul(deltaTime))
+
+					newPosition = newPosition.Add(mgl32.Vec4{w.Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+					bb = p.UpdateBoundingBox(newPosition)
+
+					roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+					roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+					roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+					collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+					if collided {
+						newPosition = newPosition.Sub(mgl32.Vec4{w.Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+						newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, w.Mul(deltaTime).Z(), 0.0})
+
+						bb = p.UpdateBoundingBox(newPosition)
+
+						roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+						roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+						roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+						collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+						if collided {
+							newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, w.Mul(deltaTime).Z(), 0.0})
+							break
+						}
+					}
+
 				}
 			}
-
 		}
 
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyD)) {
-		newPosition = newPosition.Add(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-		bb = p.UpdateBoundingBox(newPosition)
-
-		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-		if collided {
-			newPosition = newPosition.Sub(u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-			newPosition = newPosition.Add(mgl32.Vec4{u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-			bb = p.UpdateBoundingBox(newPosition)
-
-			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-			if collided {
-				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+		if p.WalkingSpeed >= deltaTime {
+			for i := deltaTime; i < p.WalkingSpeed*deltaTime; i += deltaTime {
+				newPosition = newPosition.Add(u.Mul(deltaTime))
 
 				bb = p.UpdateBoundingBox(newPosition)
 
@@ -351,44 +358,48 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+				collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
-					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+					newPosition = newPosition.Sub(u.Mul(deltaTime))
+
+					newPosition = newPosition.Add(mgl32.Vec4{u.Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+					bb = p.UpdateBoundingBox(newPosition)
+
+					roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+					roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+					roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+					collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+					if collided {
+						newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+						newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(deltaTime).Z(), 0.0})
+
+						bb = p.UpdateBoundingBox(newPosition)
+
+						roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+						roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+						roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+						collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+						if collided {
+							newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(deltaTime).Z(), 0.0})
+							break
+						}
+					}
+
 				}
 			}
-
 		}
-
 	}
 	if p.ControlHandler.IsDown(int(glfw.KeyA)) {
-		newPosition = newPosition.Add(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-		bb = p.UpdateBoundingBox(newPosition)
-
-		roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-		roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-		roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-		collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-		if collided {
-			newPosition = newPosition.Sub(u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)))
-
-			newPosition = newPosition.Add(mgl32.Vec4{u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-			bb = p.UpdateBoundingBox(newPosition)
-
-			roundedNewPositionX = int(math.Round(float64(newPosition.X())))
-			roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
-			roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
-
-			collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
-
-			if collided {
-				newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).X(), 0.0, 0.0, 0.0})
-
-				newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+		if p.WalkingSpeed >= deltaTime {
+			for i := deltaTime; i < p.WalkingSpeed*deltaTime; i += deltaTime {
+				newPosition = newPosition.Add(u.Mul(-1).Mul(deltaTime))
 
 				bb = p.UpdateBoundingBox(newPosition)
 
@@ -396,19 +407,48 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 				roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
 				roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
 
-				collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+				collided, _, _ := p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
 
 				if collided {
-					newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(p.WalkingSpeed * float32(math2.DeltaTime)).Z(), 0.0})
+					newPosition = newPosition.Sub(u.Mul(-1).Mul(deltaTime))
+
+					newPosition = newPosition.Add(mgl32.Vec4{u.Mul(-1).Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+					bb = p.UpdateBoundingBox(newPosition)
+
+					roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+					roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+					roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+					collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+					if collided {
+						newPosition = newPosition.Sub(mgl32.Vec4{u.Mul(-1).Mul(deltaTime).X(), 0.0, 0.0, 0.0})
+
+						newPosition = newPosition.Add(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(deltaTime).Z(), 0.0})
+
+						bb = p.UpdateBoundingBox(newPosition)
+
+						roundedNewPositionX = int(math.Round(float64(newPosition.X())))
+						roundedNewPositionY = int(math.Round(float64(newPosition.Y())))
+						roundedNewPositionZ = int(math.Round(float64(newPosition.Z())))
+
+						collided, _, _ = p.CheckCollisions(roundedNewPositionX, roundedNewPositionY, roundedNewPositionZ, bb, world)
+
+						if collided {
+							newPosition = newPosition.Sub(mgl32.Vec4{0.0, 0.0, u.Mul(-1).Mul(deltaTime).Z(), 0.0})
+							break
+						}
+					}
+
 				}
 			}
-
 		}
-
 	}
+
 	if collidedBelow {
 
-		newPosition = newPosition.Add(mgl32.Vec4{0.0, math2.GravityAccel * float32(math2.DeltaTime), 0.0, 0.0})
+		newPosition = newPosition.Add(mgl32.Vec4{0.0, float32(math2.DeltaTime), 0.0, 0.0})
 
 	}
 
@@ -484,10 +524,6 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 	if p.ControlHandler.IsDown(int(glfw.Key4)) {
 		color = mgl32.Vec3{1.0, 0.0, 1.0}
-	}
-
-	if collidesAbove {
-		p._isJumping = false
 	}
 
 	p.HandleWorldLimits(world)

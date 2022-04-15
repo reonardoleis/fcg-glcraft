@@ -1,12 +1,15 @@
 package world
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 	"time"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
+	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/world/chunk"
@@ -101,6 +104,8 @@ func (w *World) GenerateWorld() {
 			w.Chunks[i][j].GenerateChunk(w.GlobalNoise)
 		}
 	}
+
+	w.SetPopulatedBlocks(0, 0)
 }
 
 func (w *World) SetInitialNeighbors() {
@@ -189,11 +194,27 @@ func (w *World) SetInitialNeighbors() {
 	}
 }
 
-func (w *World) InitPopulatedBlocks() {
-	blockTypes := block.GetBlockTypes()
-	for _, _ = range blockTypes {
-		w.PopulatedBlocks = append(w.PopulatedBlocks, make([]*block.Block, 0))
+func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
+	w.PopulatedBlocks = make([][]*block.Block, 0)
+	w.PopulatedBlocks = append(w.PopulatedBlocks, []*block.Block{}) // opacos
+	w.PopulatedBlocks = append(w.PopulatedBlocks, []*block.Block{}) // transparentes
+	for i := offsetX - configs.ViewDistance; i <= offsetX+configs.ViewDistance; i++ {
+		for j := offsetZ - configs.ViewDistance; j <= offsetZ+configs.ViewDistance; j++ {
+			chunkRenderableBlocks := w.Chunks[int(i)][int(j)].GetBlocksToRender()
+			for _, renderableBlock := range chunkRenderableBlocks {
+				if renderableBlock.BlockType == block.BlockGlass || renderableBlock.BlockType == block.BlockWater {
+					w.PopulatedBlocks[1] = append(w.PopulatedBlocks[1], renderableBlock)
+				} else {
+					w.PopulatedBlocks[0] = append(w.PopulatedBlocks[0], renderableBlock)
+				}
+			}
+		}
 	}
+
+	sort.SliceStable(w.PopulatedBlocks[1], func(i, j int) bool {
+		return math2.Distance(camera.ActiveCamera.Position, w.PopulatedBlocks[1][i].Position) >
+			math2.Distance(camera.ActiveCamera.Position, w.PopulatedBlocks[1][j].Position)
+	})
 }
 
 func (w *World) PopulateIfEmpty(position mgl32.Vec3) {
@@ -295,7 +316,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 		w.UpdatePopulatedBlocks(fromX, toX, fromY, toY, fromZ, toZ, mgl32.Vec4{roundedPlayerPosition.X(), roundedPlayerPosition.Y(), roundedPlayerPosition.Z(), 1.0})
 	}*/
 
-	for i := currentChunk.Offset[0] - configs.ViewDistance; i <= currentChunk.Offset[0]+configs.ViewDistance; i++ {
+	/*for i := currentChunk.Offset[0] - configs.ViewDistance; i <= currentChunk.Offset[0]+configs.ViewDistance; i++ {
 		for j := currentChunk.Offset[1] - configs.ViewDistance; j <= currentChunk.Offset[1]+configs.ViewDistance; j++ {
 			if w.Tick >= configs.TickRate {
 				w.Chunks[int(i)][int(j)].Update()
@@ -308,10 +329,24 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 				renderableBlock.Colliding = false
 			}
 		}
+	}*/
+
+	for _, blockClass := range w.PopulatedBlocks {
+		for _, block := range blockClass {
+			block.Draw2()
+		}
 	}
 
 	if w.Tick >= configs.TickRate {
 		w.Tick = 0
+		fmt.Println("Blocks drawn last tick: ", len(w.PopulatedBlocks[0])+len(w.PopulatedBlocks[1]))
+		w.SetPopulatedBlocks(currentChunk.Offset[0], currentChunk.Offset[1])
+		for _, chunkRow := range w.Chunks {
+			for _, chunk := range chunkRow {
+				go chunk.Update()
+				go chunk.SetWatersUpdate()
+			}
+		}
 	}
 
 	w.Tick += math2.DeltaTime
@@ -346,6 +381,7 @@ func (w *World) RemoveBlockFrom(position *mgl32.Vec4) {
 	}
 
 	chunk.RemoveBlockFrom(*position)
+	w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
 }
 
 func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.BlockType) {
@@ -355,4 +391,5 @@ func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.
 	}
 
 	chunk.AddBlockAt(position, ephemeral, blockType)
+	w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
 }

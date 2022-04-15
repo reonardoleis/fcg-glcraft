@@ -76,7 +76,7 @@ func main() {
 
 	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
 	world.GenerateWorld()
-	// world.InitPopulatedBlocks()
+	// world.SetPopulatedBlocks()
 
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)

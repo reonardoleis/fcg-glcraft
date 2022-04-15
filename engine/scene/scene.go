@@ -89,7 +89,8 @@ func (s *Scene) Update(window glfw.Window) {
 
 	if currentChunk.ID != s.Player.LastChunk {
 		s.World.FutureChunks = s.World.Chunks
-		go s.World.HandleChunkChange(int(currentChunk.Offset[0]), int(currentChunk.Offset[1]))
+		s.World.HandleChunkChange(int(currentChunk.Offset[0]), int(currentChunk.Offset[1]))
+		s.World.SetPopulatedBlocks(currentChunk.Offset[0], currentChunk.Offset[1])
 	}
 
 	roundedPlayerX, roundedPlayerY, roundedPlayerZ := s.Player.GetRoundedPosition()

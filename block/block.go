@@ -8,9 +8,11 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"sort"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
@@ -84,6 +86,7 @@ type Block struct {
 	SpreadThisTick bool
 	IsFalling      bool
 	IsBreakable    bool
+	Transparent    bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -168,6 +171,11 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 	// modelGeometry := cubeVaoID
 	// edgesGeometry := geometry.GeometryInformation{}
 
+	transparent := false
+	if blockType == BlockGlass || blockType == BlockWater {
+		transparent = true
+	}
+
 	if withEdges {
 		// edgesGeometry = geometry.BuildCubeEdges(0, 0, 0, size)
 	}
@@ -179,6 +187,7 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 		BlockType:   blockType,
 		WaterForce:  8,
 		IsBreakable: true,
+		Transparent: transparent,
 	}
 }
 
@@ -255,6 +264,23 @@ func (b Block) CountNeighbors() int {
 		b.Neighbors[3] + b.Neighbors[4] + b.Neighbors[5])
 }
 
+type Face struct {
+	Index    int
+	Position mgl32.Vec4
+}
+
+func generateFaces(faces []mgl32.Vec4) []Face {
+	facesArr := []Face{}
+	for index, face := range faces {
+		facesArr = append(facesArr, Face{
+			Index:    index,
+			Position: face,
+		})
+	}
+
+	return facesArr
+}
+
 func (b Block) Draw2() {
 	//
 	blockTextures := getBlockTexture(b.BlockType)
@@ -267,17 +293,26 @@ func (b Block) Draw2() {
 	lower := math2.Lower(b.Position, float32(configs.BlockSize))
 	faces := []mgl32.Vec4{north, south, east, west, upper, lower}
 
+	facesArr := generateFaces(faces)
+
+	if b.Transparent {
+		sort.SliceStable(facesArr, func(i, j int) bool {
+			return math2.Distance(camera.ActiveCamera.Position, facesArr[i].Position) >
+				math2.Distance(camera.ActiveCamera.Position, facesArr[j].Position)
+		})
+	}
+
 	gl.BindVertexArray(geometry.Faces[0].VaoID)
 	gl.Uniform1i(black, 0)
-	for index, face := range faces {
-		if b.Neighbors[index] == 1 {
+	for _, face := range facesArr {
+		if b.Neighbors[face.Index] == 1 {
 			continue
 		}
 
 		if !BlockEdgesOnly {
 			if !b.Colliding {
 				gl.ActiveTexture(gl.TEXTURE0)
-				gl.BindTexture(gl.TEXTURE_2D, blockTextures[index])
+				gl.BindTexture(gl.TEXTURE_2D, blockTextures[face.Index])
 			} else {
 				gl.ActiveTexture(gl.TEXTURE0)
 				gl.BindTexture(gl.TEXTURE_2D, redTexture)
@@ -287,17 +322,17 @@ func (b Block) Draw2() {
 
 			yDiff := float32(0.0)
 
-			if b.BlockType == BlockWater && index < 5 && b.Neighbors[4] == 0 && !b.HasWaterAbove {
+			if b.BlockType == BlockWater && face.Index < 5 && b.Neighbors[4] == 0 && !b.HasWaterAbove {
 				yDiff = 1 - ((float32(b.WaterForce) / 8) * 0.8)
-				if index < 4 {
+				if face.Index < 4 {
 					yDiff *= 0.5
 				}
 			}
 
-			faceMat = faceMat.Mul4(math2.Matrix_Translate(face.X(), face.Y()-float32(yDiff), face.Z())).Mul4(rotations[index])
+			faceMat = faceMat.Mul4(math2.Matrix_Translate(face.Position.X(), face.Position.Y()-float32(yDiff), face.Position.Z())).Mul4(rotations[face.Index])
 
 			if b.BlockType == BlockWater && b.Neighbors[4] == 0 && !b.HasWaterAbove {
-				if index < 4 {
+				if face.Index < 4 {
 					faceMat = faceMat.Mul4(math2.Matrix_Scale(1.0, (float32(b.WaterForce)/8)*0.8, 1.0))
 				}
 			}
@@ -313,7 +348,7 @@ func (b Block) Draw2() {
 
 			if b.WithEdges {
 
-				faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
+				faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.Position.X(), face.Position.Y(), face.Position.Z())).Mul4(rotations[face.Index])
 				gl.BindVertexArray(geometry.CommonFaceEdgeGeometry.VaoID)
 				gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
 				gl.Uniform1i(black, 1)
@@ -325,7 +360,7 @@ func (b Block) Draw2() {
 				)
 			}
 		} else {
-			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.X(), face.Y(), face.Z())).Mul4(rotations[index])
+			faceMat := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(face.Position.X(), face.Position.Y(), face.Position.Z())).Mul4(rotations[face.Index])
 			gl.BindVertexArray(geometry.CommonFaceEdgeGeometry.VaoID)
 			gl.UniformMatrix4fv(model_uniform, 1, false, &faceMat[0])
 			// gl.Uniform1i(render_as_black_uniform, 1)

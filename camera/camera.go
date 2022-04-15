@@ -17,6 +17,10 @@ const (
 	FirstPersonCamera CameraType = iota
 )
 
+var (
+	ActiveCamera *Camera
+)
+
 type Camera struct {
 	Position       mgl32.Vec4
 	ViewVector     mgl32.Vec4
@@ -34,7 +38,7 @@ type Camera struct {
 }
 
 func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov float32, cameraType CameraType) *Camera {
-	return &Camera{
+	newCamera := &Camera{
 		Position:       cameraPosition,
 		ViewVector:     mgl32.Vec4{0.0, 0.0, 0.0, 0.0},
 		UpVector:       mgl32.Vec4{0.0, 1.0, 0.0, 0.0},
@@ -42,11 +46,40 @@ func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov 
 		CameraDistance: 2.5,
 		Fov:            fov,
 		Near:           -0.1,
-		Far:            -10.0,
+		Far:            -60.0,
 		CameraTheta:    0.0,
 		CameraPhi:      0.0,
 		Type:           cameraType,
 	}
+
+	ActiveCamera = newCamera
+
+	return newCamera
+}
+
+type Frustum struct {
+}
+
+func (c *Camera) GetFrustum() Frustum {
+	/*nearCenter := c.Position.Sub(c.ViewVector.Mul(c.Near))
+	farCenter := c.Position.Sub(c.ViewVector.Mul(c.Far))
+	nearHeight := 2 * float32(math.Tan(float64(c.Fov)/2)) * c.Near
+	farHeight := 2 * float32(math.Tan(float64(c.Fov)/2)) * c.Far
+	nearWidth := nearHeight * window.ScreenRatio
+	farWidth := farHeight * window.ScreenRatio
+
+	_, u := c.GetWU()
+
+	farTopLeft := farCenter.Add(c.UpVector.Mul(farHeight * 0.5).Sub(u.Mul(farWidth * 0.5)))
+	farTopRight := farCenter.Add(c.UpVector.Mul(farHeight * 0.5).Add(u.Mul(farWidth * 0.5)))
+	farBottomLeft := farCenter.Sub(c.UpVector.Mul(farHeight * 0.5).Sub(u.Mul(farWidth * 0.5)))
+	farBottomRight := farCenter.Sub(c.UpVector.Mul(farHeight * 0.5).Add(u.Mul(farWidth * 0.5)))
+
+	nearTopLeft := nearCenter + camY*(nearHeight*0.5) - camX*(nearWidth*0.5)
+	nearTopRight := nearCenter + camY*(nearHeight*0.5) + camX*(nearWidth*0.5)
+	nearBottomLeft := nearCenter - camY*(nearHeight*0.5) - camX*(nearWidth*0.5)
+	nearBottomRight := nearCenter - camY*(nearHeight*0.5) + camX*(nearWidth*0.5)*/
+	return Frustum{}
 }
 
 func (c *Camera) HandleFirstPersonCamera() {

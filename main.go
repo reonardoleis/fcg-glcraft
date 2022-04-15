@@ -74,8 +74,6 @@ func main() {
 
 	geometry.BuildFaceEdges()
 
-	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
-	world.GenerateWorld()
 	// world.SetPopulatedBlocks()
 
 	gl.Enable(gl.DEPTH_TEST)
@@ -95,6 +93,9 @@ func main() {
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 
 	sceneManager := scene.NewSceneManager()
+
+	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
+	world.GenerateWorld()
 	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene)
 
 	sceneManager.AddScene(scene1)

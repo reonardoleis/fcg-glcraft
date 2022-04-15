@@ -74,9 +74,9 @@ func (s *Scene) Update(window glfw.Window) {
 	currentChunk := s.World.Chunks[int(cx)][int(cz)]
 
 	if currentChunk.GetBlockInformationAt(int(s.Player.Position.X()), int(s.Player.Position.Y()), int(s.Player.Position.Z())) == chunk.BlockInformationCave {
-		gl.ClearColor(0, 0.0, 0.0, 1.0)
+		gl.ClearColor(0.47, 0.65, 1.0, 1.0)
 	} else {
-		gl.ClearColor(0, 1.0, 0.9, 1.0)
+		gl.ClearColor(0.47, 0.65, 1.0, 1.0)
 	}
 
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -121,4 +121,10 @@ func (s *Scene) Update(window glfw.Window) {
 		s.World.Chunks = s.World.FutureChunks
 		s.World.ShouldUpdateChunks = false
 	}
+
+	if s.World.NextPopulatedBlocksReady {
+		s.World.PopulatedBlocks = s.World.NextPopulatedBlocks
+	}
+
+	go s.World.SetPopulatedBlocks(cx, cz)
 }

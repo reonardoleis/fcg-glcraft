@@ -35,6 +35,8 @@ void main()
     vec4 origin = vec4(0.0, 0.0, 0.0, 1.0);
     vec4 camera_position = inverse(view) * origin;
 
+    vec4 position_relative_to_cam = view * position_world;
+
     // O fragmento atual é coberto por um ponto que percente à superfície de um
     // dos objetos virtuais da cena. Este ponto, p, possui uma posição no
     // sistema de coordenadas global (World coordinates). Esta posição é obtida
@@ -62,9 +64,20 @@ void main()
     
     // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
     vec4 Kd0 = texture(TextureImage0, vec2(U,V)).rgba;
+    vec4 Kd1 = vec4(0.47, 0.65, 1.0, 1.0);
 
+    float dist = length(position_relative_to_cam.xyz);
+    float density = 0.070;
+    float gradient = 1.0;
+    float visibility = exp(-pow((dist*density), gradient));
+    visibility = visibility;
     
-    color.rgb = vec3(Kd0.x, Kd0.y, Kd0.z);
+    color.rgb = mix(Kd1, Kd0, visibility).rgb;
+
+    if (dist <= 30) {
+        color.rgb = Kd0.rgb;
+    }
+    
     if(black){
          color.rgb = vec3(0.0, 0.0, 0.0);
     }

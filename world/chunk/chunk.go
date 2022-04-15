@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
+	"github.com/reonardoleis/fcg-glcraft/camera"
+	"github.com/reonardoleis/fcg-glcraft/collisions"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 
@@ -520,8 +522,27 @@ func (c *Chunk) GetBlocksToRender() []*block.Block {
 	for _, x := range c.Blocks {
 		for _, y := range x {
 			for _, currentBlock := range y {
-				if currentBlock != nil && currentBlock.CountNeighbors() != 6 && currentBlock.BlockType != block.BlockAir {
-					blocksToRender = append(blocksToRender, currentBlock)
+
+				if currentBlock != nil && currentBlock.CountNeighbors() != 6 && currentBlock.BlockType != block.BlockAir && currentBlock.Position.Y() >= camera.ActiveCamera.Position.Y()-configs.HeightViewDistance && currentBlock.Position.Y() <= camera.ActiveCamera.Position.Y()+configs.HeightViewDistance {
+					//
+
+					frustum := camera.ActiveCamera.GetFrustum()
+
+					frustumCollider := collisions.NewFrustumCollider(frustum)
+
+					shouldAdd := false
+					vertices := currentBlock.GetFutureVertices()
+					for _, vertex := range vertices {
+						if frustumCollider.CollidesWithBlock(vertex) {
+							shouldAdd = true
+							break
+						}
+					}
+
+					if shouldAdd {
+						blocksToRender = append(blocksToRender, currentBlock)
+					}
+
 					continue
 				}
 

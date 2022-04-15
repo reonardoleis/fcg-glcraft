@@ -45,8 +45,8 @@ func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov 
 		ControlHandler: controlHandler,
 		CameraDistance: 2.5,
 		Fov:            fov,
-		Near:           -0.1,
-		Far:            -60.0,
+		Near:           0.1,
+		Far:            40.0,
 		CameraTheta:    0.0,
 		CameraPhi:      0.0,
 		Type:           cameraType,
@@ -58,28 +58,57 @@ func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov 
 }
 
 type Frustum struct {
+	Ftl mgl32.Vec4
+	Ftr mgl32.Vec4
+	Fbl mgl32.Vec4
+	Fbr mgl32.Vec4
+	Ntl mgl32.Vec4
+	Ntr mgl32.Vec4
+	Nbl mgl32.Vec4
+	Nbr mgl32.Vec4
 }
 
 func (c *Camera) GetFrustum() Frustum {
-	/*nearCenter := c.Position.Sub(c.ViewVector.Mul(c.Near))
-	farCenter := c.Position.Sub(c.ViewVector.Mul(c.Far))
-	nearHeight := 2 * float32(math.Tan(float64(c.Fov)/2)) * c.Near
-	farHeight := 2 * float32(math.Tan(float64(c.Fov)/2)) * c.Far
-	nearWidth := nearHeight * window.ScreenRatio
-	farWidth := farHeight * window.ScreenRatio
+	vv := c.ViewVector
+	/* float a = cam.nearClipPlane;//get length
+	   float A = cam.fieldOfView * 0.5f;//get angle
+	   A = A * Mathf.Deg2Rad;//convert tor radians
+	   float h = (Mathf.Tan(A) * a);//calc height
+	   float w = (h / cam.pixelHeight) * cam.pixelWidth;//deduct width
+	*/
+
+	Hfar := 2 * math.Tan(float64(c.Fov)/2) * float64(c.Far)
+	Hnear := 2 * math.Tan(float64(c.Fov)/2) * float64(c.Near)
+
+	Wnear := (Hnear / 720) * 1280
+	Wfar := (Hfar / 720) * 1280
+
+	fc := c.Position.Add(vv.Mul(c.Far))
 
 	_, u := c.GetWU()
 
-	farTopLeft := farCenter.Add(c.UpVector.Mul(farHeight * 0.5).Sub(u.Mul(farWidth * 0.5)))
-	farTopRight := farCenter.Add(c.UpVector.Mul(farHeight * 0.5).Add(u.Mul(farWidth * 0.5)))
-	farBottomLeft := farCenter.Sub(c.UpVector.Mul(farHeight * 0.5).Sub(u.Mul(farWidth * 0.5)))
-	farBottomRight := farCenter.Sub(c.UpVector.Mul(farHeight * 0.5).Add(u.Mul(farWidth * 0.5)))
+	ftl := fc.Add(c.UpVector.Mul(float32(Hfar) / 2)).Sub(u.Mul(float32(Wfar) / 2))
+	ftr := fc.Add(c.UpVector.Mul(float32(Hfar) / 2)).Add(u.Mul(float32(Wfar) / 2))
+	fbl := fc.Sub(c.UpVector.Mul(float32(Hfar) / 2)).Sub(u.Mul(float32(Wfar) / 2))
+	fbr := fc.Sub(c.UpVector.Mul(float32(Hfar) / 2)).Add(u.Mul(float32(Wfar) / 2))
 
-	nearTopLeft := nearCenter + camY*(nearHeight*0.5) - camX*(nearWidth*0.5)
-	nearTopRight := nearCenter + camY*(nearHeight*0.5) + camX*(nearWidth*0.5)
-	nearBottomLeft := nearCenter - camY*(nearHeight*0.5) - camX*(nearWidth*0.5)
-	nearBottomRight := nearCenter - camY*(nearHeight*0.5) + camX*(nearWidth*0.5)*/
-	return Frustum{}
+	nc := c.Position.Add(vv.Mul(c.Near))
+
+	ntl := nc.Add(c.UpVector.Mul(float32(Hnear) / 2)).Sub(u.Mul(float32(Wnear) / 2))
+	ntr := nc.Add(c.UpVector.Mul(float32(Hnear) / 2)).Add(u.Mul(float32(Wnear) / 2))
+	nbl := nc.Sub(c.UpVector.Mul(float32(Hnear) / 2)).Sub(u.Mul(float32(Wnear) / 2))
+	nbr := nc.Sub(c.UpVector.Mul(float32(Hnear) / 2)).Add(u.Mul(float32(Wnear) / 2))
+
+	return Frustum{
+		ftl,
+		ftr,
+		fbl,
+		fbr,
+		ntl,
+		ntr,
+		nbl,
+		nbr,
+	}
 }
 
 func (c *Camera) HandleFirstPersonCamera() {
@@ -125,10 +154,10 @@ func (c *Camera) Handle() {
 
 	c.view = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
 
-	nearplane := float32(-0.1)
-	farplane := float32(-60.0)
+	nearplane := -c.Near
+	farplane := -c.Far
 
-	fov := float32(math.Pi / 3.0)
+	fov := c.Fov
 	c.projection = math2.Matrix_Perspective(fov, float32(window.ScreenRatio), nearplane, farplane)
 
 	gl.UniformMatrix4fv(viewUniform, 1, false, &c.view[0])

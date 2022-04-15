@@ -87,6 +87,7 @@ type Block struct {
 	IsFalling      bool
 	IsBreakable    bool
 	Transparent    bool
+	Hit            bool
 }
 
 func GetBlockTypes() []BlockType {
@@ -172,7 +173,7 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 	// edgesGeometry := geometry.GeometryInformation{}
 
 	transparent := false
-	if blockType == BlockGlass || blockType == BlockWater {
+	if blockType == BlockGlass || blockType == BlockWater || blockType == BlockLeaves {
 		transparent = true
 	}
 
@@ -188,6 +189,7 @@ func NewBlock(x, y, z, size float32, withEdges, ephemeral bool, blockType BlockT
 		WaterForce:  8,
 		IsBreakable: true,
 		Transparent: transparent,
+		Hit:         false,
 	}
 }
 

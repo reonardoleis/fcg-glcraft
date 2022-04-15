@@ -27,6 +27,9 @@ type World struct {
 	ShouldUpdateChunks          bool
 	LockFutureChunks            bool
 	PopulatedBlocks             [][]*block.Block
+	NextPopulatedBlocks         [][]*block.Block
+	NextPopulatedBlocksReady    bool
+	NextPopulatedBlocksFree     bool
 	ShouldUpdatePopulatedBlocks bool
 	Seed                        int64
 	Time                        int64
@@ -38,14 +41,15 @@ func NewWorld(worldName string, size mgl32.Vec3, seed int64) *World {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	noiser := noisey.NewOpenSimplexGenerator(r)
 	return &World{
-		Name:               worldName,
-		Size:               size,
-		Seed:               seed,
-		Time:               0,
-		GlobalNoise:        &noiser,
-		FutureChunks:       make(map[int]map[int]*chunk.Chunk),
-		ShouldUpdateChunks: false,
-		LockFutureChunks:   false,
+		Name:                    worldName,
+		Size:                    size,
+		Seed:                    seed,
+		Time:                    0,
+		GlobalNoise:             &noiser,
+		FutureChunks:            make(map[int]map[int]*chunk.Chunk),
+		ShouldUpdateChunks:      false,
+		LockFutureChunks:        false,
+		NextPopulatedBlocksFree: true,
 	}
 }
 
@@ -195,26 +199,89 @@ func (w *World) SetInitialNeighbors() {
 }
 
 func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
-	w.PopulatedBlocks = make([][]*block.Block, 0)
-	w.PopulatedBlocks = append(w.PopulatedBlocks, []*block.Block{}) // opacos
-	w.PopulatedBlocks = append(w.PopulatedBlocks, []*block.Block{}) // transparentes
+	if !w.NextPopulatedBlocksFree {
+		return
+	}
+
+	w.NextPopulatedBlocksFree = false
+	w.NextPopulatedBlocksReady = false
+	w.NextPopulatedBlocks = make([][]*block.Block, 0)
+	w.NextPopulatedBlocks = append(w.NextPopulatedBlocks, []*block.Block{}) // opacos
+	w.NextPopulatedBlocks = append(w.NextPopulatedBlocks, []*block.Block{}) // transparentes
 	for i := offsetX - configs.ViewDistance; i <= offsetX+configs.ViewDistance; i++ {
 		for j := offsetZ - configs.ViewDistance; j <= offsetZ+configs.ViewDistance; j++ {
 			chunkRenderableBlocks := w.Chunks[int(i)][int(j)].GetBlocksToRender()
 			for _, renderableBlock := range chunkRenderableBlocks {
-				if renderableBlock.BlockType == block.BlockGlass || renderableBlock.BlockType == block.BlockWater {
-					w.PopulatedBlocks[1] = append(w.PopulatedBlocks[1], renderableBlock)
+				if renderableBlock.BlockType == block.BlockGlass || renderableBlock.BlockType == block.BlockWater || renderableBlock.BlockType == block.BlockLeaves {
+					w.NextPopulatedBlocks[1] = append(w.NextPopulatedBlocks[1], renderableBlock)
 				} else {
-					w.PopulatedBlocks[0] = append(w.PopulatedBlocks[0], renderableBlock)
+					w.NextPopulatedBlocks[0] = append(w.NextPopulatedBlocks[0], renderableBlock)
 				}
 			}
 		}
 	}
 
-	sort.SliceStable(w.PopulatedBlocks[1], func(i, j int) bool {
-		return math2.Distance(camera.ActiveCamera.Position, w.PopulatedBlocks[1][i].Position) >
-			math2.Distance(camera.ActiveCamera.Position, w.PopulatedBlocks[1][j].Position)
+	sort.SliceStable(w.NextPopulatedBlocks[1], func(i, j int) bool {
+		return math2.Distance(camera.ActiveCamera.Position, w.NextPopulatedBlocks[1][i].Position) >
+			math2.Distance(camera.ActiveCamera.Position, w.NextPopulatedBlocks[1][j].Position)
 	})
+
+	/*frustum := camera.ActiveCamera.GetFrustum()
+
+	for x := frustum.Ftl.X(); x <= frustum.Ftr.X(); x += 1 {
+		for y := frustum.Ftl.Y(); y >= frustum.Fbl.Y(); y -= 1 {
+			vector := mgl32.Vec3{x, y, frustum.Ftl.Z()}
+			vector = vector.Sub(camera.ActiveCamera.Position.Vec3())
+			vector = vector.Normalize()
+
+			newVector := vector.Mul(0)
+			mult := float32(0)
+			for mult < 40 {
+				if w.HasNextBlockAt(newVector) {
+					break
+				}
+				mult += 0.1
+				newVector = vector.Mul(mult)
+			}
+		}
+	}
+
+	blocks := [][]*block.Block{}
+	blocks = make([][]*block.Block, 0)
+	blocks = append(blocks, []*block.Block{}) // opacos
+	blocks = append(blocks, []*block.Block{}) // transparentes
+	for _, row := range w.NextPopulatedBlocks {
+		for _, _block := range row {
+			if _block.Hit {
+				if _block.BlockType == block.BlockGlass || _block.BlockType == block.BlockWater || _block.BlockType == block.BlockLeaves {
+					blocks[1] = append(blocks[1], _block)
+				} else {
+					blocks[0] = append(blocks[0], _block)
+				}
+			}
+		}
+	}
+
+	w.NextPopulatedBlocks = blocks*/
+	w.NextPopulatedBlocksReady = true
+	w.NextPopulatedBlocksFree = true
+}
+
+func (w *World) HasNextBlockAt(p mgl32.Vec3) bool {
+	_x := float32(int(p.X()))
+	_y := float32(int(p.Y()))
+	_z := float32(int(p.Z()))
+	for _, blockTypes := range w.NextPopulatedBlocks {
+		for _, futureBlock := range blockTypes {
+			if futureBlock.Position.X() == _x && futureBlock.Position.Y() == _y && futureBlock.Position.Z() == _z {
+				fmt.Println("hitei")
+				futureBlock.Hit = true
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func (w *World) PopulateIfEmpty(position mgl32.Vec3) {
@@ -340,7 +407,6 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	if w.Tick >= configs.TickRate {
 		w.Tick = 0
 		fmt.Println("Blocks drawn last tick: ", len(w.PopulatedBlocks[0])+len(w.PopulatedBlocks[1]))
-		w.SetPopulatedBlocks(currentChunk.Offset[0], currentChunk.Offset[1])
 		for _, chunkRow := range w.Chunks {
 			for _, chunk := range chunkRow {
 				go chunk.Update()
@@ -381,7 +447,7 @@ func (w *World) RemoveBlockFrom(position *mgl32.Vec4) {
 	}
 
 	chunk.RemoveBlockFrom(*position)
-	w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
+	go w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
 }
 
 func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.BlockType) {
@@ -391,5 +457,5 @@ func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.
 	}
 
 	chunk.AddBlockAt(position, ephemeral, blockType)
-	w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
+	go w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
 }

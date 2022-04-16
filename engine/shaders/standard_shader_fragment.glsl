@@ -74,7 +74,7 @@ void main()
     
     color.rgb = mix(Kd1, Kd0, visibility).rgb;
 
-    if (dist <= 30) {
+    if (dist <= 90000) {
         color.rgb = Kd0.rgb;
     }
     

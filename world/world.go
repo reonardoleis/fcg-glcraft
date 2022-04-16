@@ -3,6 +3,7 @@ package world
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"math/rand"
 	"sort"
 	"time"
@@ -17,6 +18,10 @@ import (
 )
 
 type WorldBlocks = map[int]map[int]map[int]*block.Block
+
+var (
+	LoopCount = 1
+)
 
 type World struct {
 	Name                        string
@@ -199,10 +204,11 @@ func (w *World) SetInitialNeighbors() {
 }
 
 func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
+	fmt.Println("Tenteria fazer o loop ", LoopCount)
 	if !w.NextPopulatedBlocksFree {
 		return
 	}
-
+	start := time.Now()
 	w.NextPopulatedBlocksFree = false
 	w.NextPopulatedBlocksReady = false
 	w.NextPopulatedBlocks = make([][]*block.Block, 0)
@@ -226,24 +232,50 @@ func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 			math2.Distance(camera.ActiveCamera.Position, w.NextPopulatedBlocks[1][j].Position)
 	})
 
-	/*frustum := camera.ActiveCamera.GetFrustum()
+	frustum := camera.ActiveCamera.GetFrustum()
 
-	for x := frustum.Ftl.X(); x <= frustum.Ftr.X(); x += 1 {
-		for y := frustum.Ftl.Y(); y >= frustum.Fbl.Y(); y -= 1 {
-			vector := mgl32.Vec3{x, y, frustum.Ftl.Z()}
-			vector = vector.Sub(camera.ActiveCamera.Position.Vec3())
-			vector = vector.Normalize()
+	ftlFbl := frustum.Fbl.Sub(frustum.Ftl)
+	ftrFbr := frustum.Fbr.Sub(frustum.Ftr)
+	multVert := float32(0.5)
+	ftlFblMod := ftlFbl.Normalize().Mul(multVert)
+	ftrFbrMod := ftrFbr.Normalize().Mul(multVert)
 
-			newVector := vector.Mul(0)
-			mult := float32(0)
-			for mult < 40 {
-				if w.HasNextBlockAt(newVector) {
+	for ftlFblMod.Len() < ftlFbl.Len() {
+		leftPoint := frustum.Ftl.Add(ftlFblMod)
+		rightPoint := frustum.Ftr.Add(ftrFbrMod)
+		horiz := rightPoint.Sub(leftPoint)
+		multHoriz := float32(0.5)
+		horizMod := horiz.Normalize().Mul(multHoriz)
+
+		for horizMod.Len() < horiz.Len() {
+			horizPoint := leftPoint.Add(horizMod)
+			//fmt.Println(horizPoint)
+			//fmt.Println("HorizPoint:", horizPoint)
+			//fmt.Println("Ftl | Ftr | Fbl | Fbr", frustum.Ftl, frustum.Ftr, frustum.Fbl, frustum.Fbr)
+			//fmt.Println(horizPoint, multHoriz)
+			rayVec := horizPoint.Sub(camera.ActiveCamera.Position)
+
+			rayMult := float32(0.1)
+			rayVecMod := rayVec.Normalize().Mul(rayMult)
+			for rayVecMod.Len() < rayVec.Len() {
+				pointToTest := camera.ActiveCamera.Position.Add(rayVecMod)
+				if w.HasNextBlockAt(pointToTest.Vec3()) {
 					break
 				}
-				mult += 0.1
-				newVector = vector.Mul(mult)
+				//fmt.Println(rayVecMod)
+				rayMult += 0.1
+				rayVecMod = rayVec.Normalize().Mul(rayMult)
 			}
+
+			//fmt.Println(horizMod)
+			multHoriz += 0.5
+			horizMod = horiz.Normalize().Mul(multHoriz)
+
 		}
+
+		multVert += 0.5
+		ftlFblMod = ftlFbl.Normalize().Mul(multVert)
+		ftrFbrMod = ftrFbr.Normalize().Mul(multVert)
 	}
 
 	blocks := [][]*block.Block{}
@@ -262,7 +294,12 @@ func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 		}
 	}
 
-	w.NextPopulatedBlocks = blocks*/
+	end := time.Now()
+
+	delta := end.UnixMicro() - start.UnixMicro()
+	LoopCount++
+	fmt.Println("Demorou ", big.NewFloat(float64(delta)/math.Pow(10, 6)).String(), " segundos")
+	w.NextPopulatedBlocks = blocks
 	w.NextPopulatedBlocksReady = true
 	w.NextPopulatedBlocksFree = true
 }
@@ -274,7 +311,6 @@ func (w *World) HasNextBlockAt(p mgl32.Vec3) bool {
 	for _, blockTypes := range w.NextPopulatedBlocks {
 		for _, futureBlock := range blockTypes {
 			if futureBlock.Position.X() == _x && futureBlock.Position.Y() == _y && futureBlock.Position.Z() == _z {
-				fmt.Println("hitei")
 				futureBlock.Hit = true
 				return true
 			}

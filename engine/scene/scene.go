@@ -9,6 +9,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
 	"github.com/reonardoleis/fcg-glcraft/camera"
+	"github.com/reonardoleis/fcg-glcraft/collisions"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
@@ -55,10 +56,10 @@ type Scene struct {
 	Type           SceneType
 	Player         *player.Player
 	ControlHandler *controls.Controls
-	Objs           []geometry.GeometryInformation
+	Objs           []*geometry.GeometryInformation
 }
 
-func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Player, controlHandler controls.Controls, sceneType SceneType, objs []geometry.GeometryInformation) *Scene {
+func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Player, controlHandler controls.Controls, sceneType SceneType, objs []*geometry.GeometryInformation) *Scene {
 	return &Scene{
 		World:          world,
 		MainCamera:     mainCamera,
@@ -108,7 +109,41 @@ func (s *Scene) Update(window glfw.Window) {
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
 	gl.BindVertexArray(1)
 	for _, obj := range s.Objs {
-		obj.Draw(nil, 1)
+
+		if obj.Animating {
+			if obj.T >= 3 {
+				obj.Tdir = -1
+			}
+			if obj.T <= 0 {
+				if obj.BCurve.ControlPoints != nil {
+					c := obj.BCurve.T(obj.T)
+					obj.Position = mgl32.Vec3{obj.Position[0] + c.X(), obj.Position[1], obj.Position[2] + c.Z()}
+				}
+				obj.Tdir = 1
+				curve := math2.NewBezierCurve()
+				curve.GenerateRandomPoints()
+				obj.BCurve = curve
+			}
+
+			obj.T = obj.T + (obj.Tdir * 1 * float32(math2.DeltaTime))
+			c := obj.BCurve.T(obj.T)
+
+			obj.DrawAt(nil, 1, c)
+		} else {
+			obj.Draw(nil, 1)
+		}
+
+		sphereCollider := collisions.SphereCollider{
+			Center: obj.Position,
+			Radius: 5,
+		}
+
+		if sphereCollider.CollidesWith(s.Player.Position.Vec3()) {
+			obj.Animating = true
+		} else {
+			obj.Animating = false
+		}
+
 	}
 	gl.BindVertexArray(0)
 	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer, currentChunk)

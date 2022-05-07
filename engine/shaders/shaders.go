@@ -14,6 +14,8 @@ import (
 var (
 	ShaderProgramDefault   uint32
 	ShaderProgramCrosshair uint32
+	FragmentShader         string
+	VertexShader           string
 )
 
 func LoadFragmentShader(name string) (string, error) {

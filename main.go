@@ -61,7 +61,8 @@ func main() {
 	cow := lib.NewModel("./cow.obj")
 	cowVertices := cow.GetRenderableVertices()
 	cowGeometry := geometry.BuildObj(cowVertices, cow.VecIndices)
-	cowGeometry.Position = mgl32.Vec3{0, 35, 0}
+	cowGeometry.Position = mgl32.Vec3{0, 34, 0}
+	cowGeometry.Tdir = 1
 
 	_, err = shaders.InitShaderProgram("standard")
 	if err != nil {
@@ -102,7 +103,7 @@ func main() {
 
 	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
 	world.GenerateWorld()
-	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene, []geometry.GeometryInformation{cowGeometry})
+	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene, []*geometry.GeometryInformation{&cowGeometry})
 
 	sceneManager.AddScene(scene1)
 	sceneManager.SetActiveScene(0)

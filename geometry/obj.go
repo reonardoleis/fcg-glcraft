@@ -171,3 +171,26 @@ func (gi GeometryInformation) Draw(modelMat_ *mgl32.Mat4, objectId int32) {
 		gi.FirstIndex,
 	)
 }
+
+func (gi GeometryInformation) DrawAt(modelMat_ *mgl32.Mat4, objectId int32, at mgl32.Vec3) {
+	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
+	object_id := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("object_id\000")) // Variável da matriz "model"
+	gl.BindVertexArray(gi.VaoID)
+	gl.Uniform1i(object_id, objectId)
+
+	var modelMat mgl32.Mat4
+	if modelMat_ == nil {
+		modelMat = math2.Matrix_Identity().Mul4(math2.Matrix_Translate(gi.Position[0]+at[0], gi.Position[1]+at[1], gi.Position[2]+at[2])).Mul4(math2.Matrix_Scale(1, 1, 1))
+	} else {
+		modelMat = *modelMat_
+	}
+
+	gl.UniformMatrix4fv(model_uniform, 1, false, &modelMat[0])
+
+	gl.DrawElements(
+		uint32(gi.RenderingMode), // Veja slides 124-130 do documento Aula_04_Modelagem_Geometrica_3D.pdf
+		int32(gi.NumIndices),
+		gl.UNSIGNED_INT,
+		gi.FirstIndex,
+	)
+}

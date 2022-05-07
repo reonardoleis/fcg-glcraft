@@ -157,7 +157,7 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 				//// fmt.Println("BLOCO Min: ", blockBoundingBox.Mins)
 				//// fmt.Println(x, playerX, y, playerY, z, playerZ)
 
-				if y == roundedNewPositionY-1 && p.Collider.Collides(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
+				if y == roundedNewPositionY-1 && p.Collider.CollidesABBABB(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
 					//fmt.Println("Colidindo abaixo...")
 					//fmt.Println("Maximos: ", blockBoundingBox.Maxes, " Minimos: ", blockBoundingBox.Mins)
 					//fmt.Println("Maximos: ", futureBoundingBox.Maxes, " Minimos: ", futureBoundingBox.Mins)
@@ -166,7 +166,7 @@ func (p *Player) CheckCollisions(roundedNewPositionX int, roundedNewPositionY in
 					continue
 				}
 
-				if p.Collider.Collides(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
+				if p.Collider.CollidesABBABB(futureBoundingBox, *blockBoundingBox, p.BoundingBoxFutureVertices, cubeVertices) {
 					// blockToVerify.Colliding = true
 
 					if y == roundedNewPositionY+1 {

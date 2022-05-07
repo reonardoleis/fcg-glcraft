@@ -127,6 +127,7 @@ func Dotproduct(u, v mgl32.Vec4) float32 {
 
 func Matrix_Camera_View(positionC, viewVector, upVector mgl32.Vec4) mgl32.Mat4 {
 	w := viewVector.Mul(-1)
+
 	u := Crossproduct(upVector, w)
 
 	// não existe override de operadores em Go,
@@ -137,7 +138,12 @@ func Matrix_Camera_View(positionC, viewVector, upVector mgl32.Vec4) mgl32.Mat4 {
 	// w = w / norm(w);
 	// u = u / norm(u);
 
-	w, u = w.Normalize(), u.Normalize()
+	if w.Len() != 0 {
+		w = w.Normalize()
+	}
+	if u.Len() != 0 {
+		u = u.Normalize()
+	}
 
 	v := Crossproduct(w, u)
 

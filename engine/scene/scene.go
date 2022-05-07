@@ -55,15 +55,17 @@ type Scene struct {
 	Type           SceneType
 	Player         *player.Player
 	ControlHandler *controls.Controls
+	Objs           []geometry.GeometryInformation
 }
 
-func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Player, controlHandler controls.Controls, sceneType SceneType) *Scene {
+func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Player, controlHandler controls.Controls, sceneType SceneType, objs []geometry.GeometryInformation) *Scene {
 	return &Scene{
 		World:          world,
 		MainCamera:     mainCamera,
 		Player:         player,
 		ControlHandler: &controlHandler,
 		Type:           sceneType,
+		Objs:           objs,
 	}
 }
 
@@ -104,9 +106,14 @@ func (s *Scene) Update(window glfw.Window) {
 	}
 
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
-
+	gl.BindVertexArray(1)
+	for _, obj := range s.Objs {
+		obj.Draw(nil, 1)
+	}
+	gl.BindVertexArray(0)
 	s.World.Update(mgl32.Vec3{float32(roundedPlayerX), float32(roundedPlayerY), float32(roundedPlayerZ)}, backOfPlayer, frontOfPlayer, currentChunk)
 	s.Player.Update(s.World, s.World.Chunks[int(cx)][int(cz)])
+
 	/*window.SetTitle(fmt.Sprintf("FPS: %v - X: %v - Y: %v - Z: %v - wsX: %v - wsZ: %v", 1/math2.DeltaTime,
 	roundedPlayerX, playerY, roundedPlayerZ, s.World.Size.X(), s.World.Size.Z()))*/
 	gl.BindVertexArray(0)

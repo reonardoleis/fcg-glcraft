@@ -3,12 +3,14 @@ package player
 import (
 	"math"
 
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/reonardoleis/fcg-glcraft/block"
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/collisions"
 	"github.com/reonardoleis/fcg-glcraft/configs"
+	"github.com/reonardoleis/fcg-glcraft/geometry"
 	"github.com/reonardoleis/fcg-glcraft/world/chunk"
 
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
@@ -46,6 +48,12 @@ type Player struct {
 	BoundingBoxFutureVertices [8]mgl32.Vec3
 	SelectedBlock             block.BlockType
 	LastChunk                 uint64
+	Arm                       geometry.GeometryInformation
+	IsAnimatingArm            bool
+	ArmAnimationOffset        float32
+	ArmAnimationDir           int
+	Body                      geometry.GeometryInformation
+	IsThirdPerson             bool
 }
 
 func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walkingSpeed, runningMultiplier, jumpHeight, jumpSpeed, height float32) Player {
@@ -75,6 +83,12 @@ func NewPlayer(playerPosition mgl32.Vec4, controlHandler controls.Controls, walk
 		BoundingBoxFutureVertices: [8]mgl32.Vec3{},
 		SelectedBlock:             block.BlockDirt,
 		LastChunk:                 0,
+		Arm:                       geometry.BuildCube(0, 0, 0, 1, 0, 0, 0),
+		Body:                      geometry.BuildCube(0, 0, 0, 1, 0, 0, 0),
+		ArmAnimationOffset:        0,
+		ArmAnimationDir:           1,
+		IsAnimatingArm:            false,
+		IsThirdPerson:             false,
 	}
 }
 
@@ -446,6 +460,9 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		}
 	}
 
+	p.IsThirdPerson = p.ControlHandler.IsToggled(int(glfw.KeyQ))
+	p.Camera.IsLookAt = p.IsThirdPerson
+
 	if collidedBelow {
 
 		newPosition = newPosition.Add(mgl32.Vec4{0.0, float32(math2.DeltaTime), 0.0, 0.0})
@@ -459,8 +476,15 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		world.RemoveBlockFrom(p.HitAt)
 		p.HitAt = nil
 	}
+	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) {
+		if !p.IsAnimatingArm {
+			p.IsAnimatingArm = true
+			p.ArmAnimationOffset = 0.001
+		}
+	}
 	if !p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) {
 		p._mouseLeftDownLastUpdate = false
+
 	}
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
 		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, p.SelectedBlock)
@@ -530,6 +554,41 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 0.0}))
 	p.Camera.Update()
+
+	_, u = p.Camera.GetWU()
+
+	armPos := p.Position.Vec3().Add(p.Camera.ViewVector.Vec3().Mul(0.5 + p.ArmAnimationOffset)).Add(u.Vec3().Mul((1)))
+
+	armMatrix := math2.Matrix_Identity()
+
+	armMatrix = armMatrix.Mul4(math2.Matrix_Translate(armPos[0], armPos[1], armPos[2]))
+	armMatrix = armMatrix.Mul4(math2.Matrix_Rotate_Y(float32(p.Camera.CameraTheta))).Mul4(math2.Matrix_Rotate_X(float32(-p.Camera.CameraPhi))).Mul4(math2.Matrix_Scale(0.5, 0.5, 1.3))
+
+	if p.IsThirdPerson {
+		//bodyMatrix := math2.Matrix_Identity().Mul4(math2.Matrix_Translate(p.Position[0], p.Position[1], p.Position[2])).Mul4(math2.Matrix_Scale(1, 3, 1))
+		gl.BindVertexArray(1)
+		//p.Body.Draw(&bodyMatrix, 2)
+		gl.BindVertexArray(0)
+	}
+
+	gl.BindVertexArray(1)
+	p.Arm.Draw(&armMatrix, 2)
+	gl.BindVertexArray(0)
+
+	if p.IsAnimatingArm {
+
+		if p.ArmAnimationOffset >= 1 {
+			p.ArmAnimationDir = -1
+		}
+
+		if p.ArmAnimationOffset <= 0 {
+			p.IsAnimatingArm = false
+			p.ArmAnimationOffset = 0
+			p.ArmAnimationDir = 1
+		}
+
+		p.ArmAnimationOffset += 10 * float32(p.ArmAnimationDir) * float32(math2.DeltaTime)
+	}
 
 	p.LastChunk = chunk.ID
 	p.HandleBlockInteractions(world, chunk)

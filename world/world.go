@@ -3,7 +3,6 @@ package world
 import (
 	"fmt"
 	"math"
-	"math/big"
 	"math/rand"
 	"sort"
 	"time"
@@ -204,11 +203,11 @@ func (w *World) SetInitialNeighbors() {
 }
 
 func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
-	fmt.Println("Tenteria fazer o loop ", LoopCount)
+
 	if !w.NextPopulatedBlocksFree {
 		return
 	}
-	start := time.Now()
+
 	w.NextPopulatedBlocksFree = false
 	w.NextPopulatedBlocksReady = false
 	w.NextPopulatedBlocks = make([][]*block.Block, 0)
@@ -232,7 +231,7 @@ func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 			math2.Distance(camera.ActiveCamera.Position, w.NextPopulatedBlocks[1][j].Position)
 	})
 
-	frustum := camera.ActiveCamera.GetFrustum()
+	/*frustum := camera.ActiveCamera.GetFrustum()
 
 	ftlFbl := frustum.Fbl.Sub(frustum.Ftl)
 	ftrFbr := frustum.Fbr.Sub(frustum.Ftr)
@@ -276,7 +275,7 @@ func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 		multVert += 0.5
 		ftlFblMod = ftlFbl.Normalize().Mul(multVert)
 		ftrFbrMod = ftrFbr.Normalize().Mul(multVert)
-	}
+	}*/
 
 	blocks := [][]*block.Block{}
 	blocks = make([][]*block.Block, 0)
@@ -284,21 +283,16 @@ func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 	blocks = append(blocks, []*block.Block{}) // transparentes
 	for _, row := range w.NextPopulatedBlocks {
 		for _, _block := range row {
-			if _block.Hit {
-				if _block.BlockType == block.BlockGlass || _block.BlockType == block.BlockWater || _block.BlockType == block.BlockLeaves {
-					blocks[1] = append(blocks[1], _block)
-				} else {
-					blocks[0] = append(blocks[0], _block)
-				}
+
+			if _block.BlockType == block.BlockGlass || _block.BlockType == block.BlockWater || _block.BlockType == block.BlockLeaves {
+				blocks[1] = append(blocks[1], _block)
+			} else {
+				blocks[0] = append(blocks[0], _block)
 			}
+
 		}
 	}
 
-	end := time.Now()
-
-	delta := end.UnixMicro() - start.UnixMicro()
-	LoopCount++
-	fmt.Println("Demorou ", big.NewFloat(float64(delta)/math.Pow(10, 6)).String(), " segundos")
 	w.NextPopulatedBlocks = blocks
 	w.NextPopulatedBlocksReady = true
 	w.NextPopulatedBlocksFree = true

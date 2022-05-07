@@ -35,6 +35,7 @@ type Camera struct {
 	Type           CameraType
 	view           mgl32.Mat4
 	projection     mgl32.Mat4
+	IsLookAt       bool
 }
 
 func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov float32, cameraType CameraType) *Camera {
@@ -50,6 +51,7 @@ func NewCamera(cameraPosition mgl32.Vec4, controlHandler controls.Controls, fov 
 		CameraTheta:    0.0,
 		CameraPhi:      0.0,
 		Type:           cameraType,
+		IsLookAt:       false,
 	}
 
 	ActiveCamera = newCamera
@@ -111,7 +113,7 @@ func (c *Camera) GetFrustum() Frustum {
 	}
 }
 
-func (c *Camera) HandleFirstPersonCamera() {
+func (c *Camera) HandleDeltas() {
 	if c.ControlHandler.MousePositionChanged() {
 		dx, dy := c.ControlHandler.GetMouseDeltas()
 		c.CameraTheta -= 0.01 * dx
@@ -141,9 +143,9 @@ func (c *Camera) HandleFirstPersonCamera() {
 func (c *Camera) Update() {
 	switch c.Type {
 	case FirstPersonCamera:
-		c.HandleFirstPersonCamera()
+		c.HandleDeltas()
 	default:
-		c.HandleFirstPersonCamera()
+		c.HandleDeltas()
 	}
 	c.Handle()
 }
@@ -151,6 +153,15 @@ func (c *Camera) Update() {
 func (c *Camera) Handle() {
 	viewUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
 	projectionUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl
+
+	if c.IsLookAt {
+
+		cameraPositionC := c.Position
+
+		cameraLookatL := mgl32.Vec4{0, 32, 0, 1.0}
+
+		c.ViewVector = cameraLookatL.Sub(cameraPositionC)
+	}
 
 	c.view = math2.Matrix_Camera_View(c.Position, c.ViewVector, c.UpVector)
 

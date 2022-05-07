@@ -286,6 +286,7 @@ func generateFaces(faces []mgl32.Vec4) []Face {
 func (b Block) Draw2() {
 	//
 	blockTextures := getBlockTexture(b.BlockType)
+	object_id := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("object_id\000")) // Variável da matriz "model"
 
 	north := math2.North(b.Position, float32(configs.BlockSize))
 	south := math2.South(b.Position, float32(configs.BlockSize))
@@ -306,6 +307,7 @@ func (b Block) Draw2() {
 
 	gl.BindVertexArray(geometry.Faces[0].VaoID)
 	gl.Uniform1i(black, 0)
+	gl.Uniform1i(object_id, 0)
 	for _, face := range facesArr {
 		if b.Neighbors[face.Index] == 1 {
 			continue

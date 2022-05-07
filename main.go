@@ -29,6 +29,7 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
 	"github.com/reonardoleis/fcg-glcraft/geometry"
+	"github.com/reonardoleis/fcg-glcraft/lib"
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 	"github.com/reonardoleis/fcg-glcraft/player"
 	"github.com/reonardoleis/fcg-glcraft/world"
@@ -56,6 +57,11 @@ func main() {
 	}
 
 	//mainScene := scene.NewScene()
+
+	cow := lib.NewModel("./cow.obj")
+	cowVertices := cow.GetRenderableVertices()
+	cowGeometry := geometry.BuildObj(cowVertices, cow.VecIndices)
+	cowGeometry.Position = mgl32.Vec3{0, 35, 0}
 
 	_, err = shaders.InitShaderProgram("standard")
 	if err != nil {
@@ -96,7 +102,7 @@ func main() {
 
 	world := world.NewWorld("", mgl32.Vec3{256, 32, 256}, 2300932812397)
 	world.GenerateWorld()
-	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene)
+	scene1 := scene.NewScene(world, camera1, &player1, controlHandler, scene.GameScene, []geometry.GeometryInformation{cowGeometry})
 
 	sceneManager.AddScene(scene1)
 	sceneManager.SetActiveScene(0)

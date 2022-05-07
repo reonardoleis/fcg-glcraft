@@ -11,8 +11,8 @@ const (
 	HeightViewDistance float32 = 16
 	JumpHeight         float32 = 2
 	ChunkSize          int     = 16
-	WorldHeight        int     = 128
-	ChunkSmoothness    int     = 8
+	WorldHeight        int     = 64
+	ChunkSmoothness    int     = 200
 	CaveThreshold      float32 = 0.4
 	CaveMinHeight      int     = WorldHeight
 	BoundingBoxMinY    float32 = 1.0

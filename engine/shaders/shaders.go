@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
-	"runtime"
 	"strings"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
@@ -19,8 +17,7 @@ var (
 )
 
 func LoadFragmentShader(name string) (string, error) {
-	_, filename, _, _ := runtime.Caller(0)
-	fragmentShaderFile := fmt.Sprintf("%v/%v", path.Dir(filename), fmt.Sprintf("%v_shader_fragment.glsl", name))
+	fragmentShaderFile := fmt.Sprintf(fmt.Sprintf("./%v_shader_fragment.glsl", name))
 
 	fragmentShader, err := os.ReadFile(fragmentShaderFile)
 	if err != nil {
@@ -32,8 +29,7 @@ func LoadFragmentShader(name string) (string, error) {
 }
 
 func LoadVertexShader(name string) (string, error) {
-	_, filename, _, _ := runtime.Caller(0)
-	vertexShaderFile := fmt.Sprintf("%v/%v", path.Dir(filename), fmt.Sprintf("%v_shader_vertex.glsl", name))
+	vertexShaderFile := fmt.Sprintf(fmt.Sprintf("./%v_shader_vertex.glsl", name))
 
 	vertexShader, err := os.ReadFile(vertexShaderFile)
 	if err != nil {

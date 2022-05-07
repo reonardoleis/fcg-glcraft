@@ -6,8 +6,6 @@ import (
 	"image/draw"
 	"math"
 	"os"
-	"path"
-	"runtime"
 	"sort"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
@@ -220,8 +218,7 @@ func (b Block) GetFutureVertices() [8]mgl32.Vec3 {
 }
 
 func newTexture(file string) uint32 {
-	_, filename, _, _ := runtime.Caller(0)
-	textureFile := fmt.Sprintf("%v/%v", path.Dir(filename), file)
+	textureFile := fmt.Sprintf("./%v", file)
 	imgFile, err := os.Open(textureFile)
 	if err != nil {
 		panic(err)

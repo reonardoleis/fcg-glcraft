@@ -10,6 +10,7 @@ var (
 	ScreenRatio float32 = 1.0
 )
 
+// Creates the windows
 func NewWindow(title string, width, height int) (*glfw.Window, error) {
 	err := glfw.Init()
 	if err != nil {

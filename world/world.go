@@ -80,6 +80,7 @@ func (w World) FindHighestBlock(wx, wz int) *block.Block {
 	return highestBlock
 }
 
+// Handles chunk change when player moves from one chunk to another
 func (w *World) HandleChunkChange(offsetX, offsetZ int) {
 	for w.LockFutureChunks {
 
@@ -103,6 +104,7 @@ func (w *World) HandleChunkChange(offsetX, offsetZ int) {
 	w.LockFutureChunks = false
 }
 
+// Initial world generation
 func (w *World) GenerateWorld() {
 	w.Chunks = make(map[int]map[int]*chunk.Chunk)
 	for i := -10; i <= 10; i++ {
@@ -116,92 +118,7 @@ func (w *World) GenerateWorld() {
 	w.SetPopulatedBlocks(0, 0)
 }
 
-func (w *World) SetInitialNeighbors() {
-	for x := int(-w.Size.X()); x < int(w.Size.X()); x++ {
-		for y := int(-w.Size.Y()); y < int(w.Size.Y()); y++ {
-			for z := int(-w.Size.Z()); z < int(w.Size.Z()); z++ {
-				blockPositionX, blockPositionY, blockPositionZ := int(x), int(y), int(z)
-
-				if w.Blocks[blockPositionX][blockPositionY][blockPositionZ] == nil {
-					continue
-				}
-
-				if w.Blocks[blockPositionX+1][blockPositionY][blockPositionZ] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
-
-					} else if w.Blocks[blockPositionX+1][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 0
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[0] = 1
-					}
-
-				}
-				if w.Blocks[blockPositionX-1][blockPositionY][blockPositionZ] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 1
-
-					} else if w.Blocks[blockPositionX-1][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 0
-
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[1] = 1
-					}
-
-				}
-				if w.Blocks[blockPositionX][blockPositionY][blockPositionZ+1] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 1
-
-					} else if w.Blocks[blockPositionX][blockPositionY][blockPositionZ+1].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 0
-
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[2] = 1
-					}
-
-				}
-				if w.Blocks[blockPositionX][blockPositionY][int(blockPositionZ-1)] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 1
-
-					} else if w.Blocks[blockPositionX][blockPositionY][blockPositionZ-1].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 0
-
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[3] = 1
-					}
-
-				}
-				if w.Blocks[blockPositionX][blockPositionY+1][blockPositionZ] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 1
-
-					} else if w.Blocks[blockPositionX][blockPositionY+1][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 0
-
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[4] = 1
-					}
-
-				}
-				if w.Blocks[blockPositionX][blockPositionY-1][blockPositionZ] != nil {
-					if w.Blocks[blockPositionX][blockPositionY][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 1
-
-					} else if w.Blocks[blockPositionX][blockPositionY-1][blockPositionZ].BlockType == block.BlockWater {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 0
-
-					} else {
-						w.Blocks[blockPositionX][blockPositionY][blockPositionZ].Neighbors[5] = 1
-					}
-
-				}
-			}
-		}
-	}
-}
-
+// Updates blocks that should be rendered
 func (w *World) SetPopulatedBlocks(offsetX, offsetZ float32) {
 
 	if !w.NextPopulatedBlocksFree {
@@ -326,38 +243,6 @@ func (w *World) PopulateIfEmpty(position mgl32.Vec3) {
 	}
 }
 
-func (w *World) PlaceTree(position mgl32.Vec3) {
-	treeHeight := math2.RandInt(2, 4)
-
-	for i := 0; i <= treeHeight; i++ {
-		blockPosition := mgl32.Vec3{position.X(), position.Y() + float32(i), position.Z()}
-		w.PopulateIfEmpty(blockPosition)
-		treeBlock := block.NewBlock(position.X(), position.Y()+float32(i), position.Z(), float32(configs.BlockSize), false, false, block.BlockWood)
-		w.Blocks[int(position.X())][int(position.Y())+i][int(position.Z())] = &treeBlock
-	}
-
-	treeMax := position.Y() + float32(treeHeight)
-
-	for x := -1 + int(position.X()); x <= int(position.X())+1; x++ {
-		for y := int(treeMax); y <= int(treeMax)+1; y++ {
-			for z := -1 + int(position.Z()); z <= int(position.Z())+1; z++ {
-				if float32(x) == position.X() && float32(z) == position.Z() {
-					continue
-				}
-				blockPosition := mgl32.Vec3{float32(x), float32(y), float32(z)}
-				w.PopulateIfEmpty(blockPosition)
-				treeBlock := block.NewBlock(float32(x), float32(y), float32(z), float32(configs.BlockSize), false, false, block.BlockLeaves)
-				w.Blocks[x][y][z] = &treeBlock
-			}
-		}
-	}
-
-	blockPosition := mgl32.Vec3{position.X(), treeMax + 2, position.Z()}
-	w.PopulateIfEmpty(blockPosition)
-	treeBlock := block.NewBlock(blockPosition.X(), blockPosition.Y(), blockPosition.Z(), float32(configs.BlockSize), false, false, block.BlockLeaves)
-	w.Blocks[int(blockPosition.X())][int(blockPosition.Y())][int(blockPosition.Z())] = &treeBlock
-}
-
 func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPlayer mgl32.Vec3, currentChunk *chunk.Chunk) {
 
 	/*maxDist := float64(configs.ViewDistance)
@@ -428,6 +313,8 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 		}
 	}*/
 
+	// for each populated block (renderable block)
+	// draws it ons creen
 	for _, blockClass := range w.PopulatedBlocks {
 		for _, block := range blockClass {
 			block.Draw2()
@@ -448,6 +335,7 @@ func (w *World) Update(roundedPlayerPosition mgl32.Vec3, backOfPlayer, frontOfPl
 	w.Tick += math2.DeltaTime
 }
 
+// gets a x,z chunk
 func (w *World) GetChunk(x, z int) *chunk.Chunk {
 	chunkRow, chunkColumn := int(math.Floor(float64(x)/float64(configs.ChunkSize))), int(math.Floor(float64(z)/float64(configs.ChunkSize)))
 	if len(w.Chunks[chunkRow]) == 0 {
@@ -459,6 +347,7 @@ func (w *World) GetChunk(x, z int) *chunk.Chunk {
 	return chunk
 }
 
+// gets a block at a given position, computing the chunk and getting the block inside the computed chunk
 func (w *World) GetBlockAt(x, y, z int) *block.Block {
 	chunk := w.GetChunk(x, z)
 	if chunk == nil {
@@ -480,6 +369,7 @@ func (w *World) RemoveBlockFrom(position *mgl32.Vec4) {
 	go w.SetPopulatedBlocks(chunk.Offset[0], chunk.Offset[1])
 }
 
+// add a block at a given position, computing the chunk and getting the block inside the computed chunk
 func (w *World) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.BlockType) {
 	chunk := w.GetChunk(int(position.X()), int(position.Z()))
 	if chunk == nil {

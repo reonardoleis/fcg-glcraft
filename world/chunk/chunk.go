@@ -61,6 +61,7 @@ func (c *Chunk) allocateBlockSlice() {
 	}
 }
 
+// Compute neighbors of each chunk block
 func (c *Chunk) SetNeighbors() {
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight; y++ {
@@ -192,6 +193,7 @@ func (c *Chunk) SetNeighbors() {
 	}
 }
 
+// Places a tree at given position within the chunk
 func (c *Chunk) PlaceTree(x, y, z int) {
 	position := mgl32.Vec3{float32(x), float32(y), float32(z)}
 	treeHeight := math2.RandInt(2, 4)
@@ -222,8 +224,11 @@ func (c *Chunk) PlaceTree(x, y, z int) {
 	c.AddBlockAtNotOffsetted(int(blockPosition.X()), int(blockPosition.Y()), int(blockPosition.Z()), &treeBlock)
 }
 
+// Generates a chunk
 func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 	c.allocateBlockSlice()
+
+	// Height map with base stone world generation
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for z := 0; z < int(configs.ChunkSize); z++ {
 			/*blockHeight := float64(configs.WorldHeight/2) + math.Round(float64(configs.WorldHeight)/2)*
@@ -250,6 +255,7 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
+	// Cave generation
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			for z := 0; z < int(configs.ChunkSize); z++ {
@@ -273,6 +279,7 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
+	// Water generation
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			for z := 0; z < int(configs.ChunkSize); z++ {
@@ -302,6 +309,7 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
+	// Grass, coal and iron generation
 	r1 := rand.New(rand.NewSource(int64(math2.RandInt(0, 1000000000000000))))
 	r2 := rand.New(rand.NewSource(int64(math2.RandInt(0, 1000000000000000))))
 	coalNoiser := noisey.NewOpenSimplexGenerator(r1)
@@ -348,6 +356,7 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 		}
 	}
 
+	// Tree generator
 	for x := 0; x < int(configs.ChunkSize); x++ {
 		for y := 0; y < int(configs.WorldHeight); y++ {
 			for z := 0; z < int(configs.ChunkSize); z++ {
@@ -364,6 +373,7 @@ func (c *Chunk) GenerateChunk(noiseSource *noisey.OpenSimplexGenerator) {
 	c.SetNeighbors()
 }
 
+// Get block at given position without offsetting chunk positions
 func (c *Chunk) GetBlockAtNotOffsetted(x, y, z int) *block.Block {
 	_x := x
 	_z := z
@@ -374,6 +384,7 @@ func (c *Chunk) GetBlockAtNotOffsetted(x, y, z int) *block.Block {
 	return c.Blocks[_x][y][_z]
 }
 
+// Get block at given position (can return nil)
 func (c *Chunk) GetBlockAt(x, y, z int) *block.Block {
 	_x := x - (int(c.Offset[0] * float32(configs.ChunkSize)))
 	_z := z - (int(c.Offset[1] * float32(configs.ChunkSize)))
@@ -384,6 +395,7 @@ func (c *Chunk) GetBlockAt(x, y, z int) *block.Block {
 	return c.Blocks[_x][y][_z]
 }
 
+// Get block at given position
 func (c *Chunk) GetBlockInformationAt(x, y, z int) BlockInformation {
 	_x := x - (int(c.Offset[0] * float32(configs.ChunkSize)))
 	_z := z - (int(c.Offset[1] * float32(configs.ChunkSize)))
@@ -394,6 +406,7 @@ func (c *Chunk) GetBlockInformationAt(x, y, z int) BlockInformation {
 	return c.BlocksInformation[_x][y][_z]
 }
 
+// Finds closest placement position
 func (c Chunk) FindPlacementPosition(hitAt mgl32.Vec4, nearFrom mgl32.Vec4, boundingBoxHighests, boundingBoxLowests mgl32.Vec3) *mgl32.Vec4 {
 	block1 := mgl32.Vec4{hitAt.X(), hitAt.Y() + 1, hitAt.Z(), 1.0} // above
 	block2 := mgl32.Vec4{hitAt.X(), hitAt.Y() - 1, hitAt.Z(), 1.0} // below
@@ -438,6 +451,7 @@ func (c Chunk) FindPlacementPosition(hitAt mgl32.Vec4, nearFrom mgl32.Vec4, boun
 	return &block
 }
 
+// Removes a block from specific position within the chunk, converting world positions to chunk positions
 func (c *Chunk) RemoveBlockFrom(position mgl32.Vec4) {
 	northNeighbor := math2.North(position, float32(configs.BlockSize)*2)
 	southNeighbor := math2.South(position, float32(configs.BlockSize)*2)
@@ -489,10 +503,12 @@ func (c *Chunk) RemoveBlockFrom(position mgl32.Vec4) {
 	}
 }
 
+// Converts world positions to chunk positions
 func (c Chunk) GetOffsettedPositions(x, y, z float32) (float32, float32, float32) {
 	return x - (c.Offset[0] * float32(configs.ChunkSize)), y, z - (c.Offset[1] * float32(configs.ChunkSize))
 }
 
+// Adds a block at specific position within the chunk, converting world positions to chunk positions
 func (c *Chunk) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.BlockType) {
 	x, y, z := position.Elem()
 
@@ -505,6 +521,7 @@ func (c *Chunk) AddBlockAt(position mgl32.Vec3, ephemeral bool, blockType block.
 	c.SetNeighbors()
 }
 
+// Adds a block at specific position within the chunk
 func (c *Chunk) AddBlockAtNotOffsetted(x, y, z int, block *block.Block) {
 	_x := x
 	_z := z
@@ -553,6 +570,7 @@ func (c *Chunk) GetBlocksToRender() []*block.Block {
 	return blocksToRender
 }
 
+// Updates the chunk
 func (c *Chunk) Update() {
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight; y++ {
@@ -642,6 +660,7 @@ func (c *Chunk) Update() {
 	c.SetNeighbors()
 }
 
+// Handle the water spreading
 func (c *Chunk) SetWatersUpdate() {
 	for x := 0; x < configs.ChunkSize; x++ {
 		for y := 0; y < configs.WorldHeight; y++ {

@@ -13,7 +13,7 @@ func NewCubeCollider() *CubeCollider {
 }
 
 func (cc CubeCollider) CollidesABBABB(a, b CubeBoundingBox, av, bv [8]mgl32.Vec3) bool {
-	// Colisão ABB-ABB
+	// ABB-ABB Collision
 	if av[0].X() >= b.Mins.X() && av[0].X() <= b.Maxes.X() && av[0].Y() >= b.Mins.Y() && av[0].Y() <= b.Maxes.Y() && av[0].Z() >= b.Mins.Z() && av[0].Z() <= b.Maxes.Z() ||
 		av[1].X() >= b.Mins.X() && av[1].X() <= b.Maxes.X() && av[1].Y() >= b.Mins.Y() && av[1].Y() <= b.Maxes.Y() && av[1].Z() >= b.Mins.Z() && av[1].Z() <= b.Maxes.Z() ||
 		av[2].X() >= b.Mins.X() && av[2].X() <= b.Maxes.X() && av[2].Y() >= b.Mins.Y() && av[2].Y() <= b.Maxes.Y() && av[2].Z() >= b.Mins.Z() && av[2].Z() <= b.Maxes.Z() ||
@@ -105,7 +105,7 @@ func getBiggest(values []float32) float32 {
 	return biggest
 }
 
-// Polygon-Point collision
+// OBB-Point collision
 func (f FrustumCollider) CollidesWithBlock(p mgl32.Vec3) bool {
 	ft := f.Frustum
 	xs := []float32{ft.Ntl.X(), ft.Ntr.X(), ft.Ftl.X(), ft.Ftr.X(), ft.Nbl.X(), ft.Nbr.X(), ft.Fbr.X(), ft.Fbl.X()}

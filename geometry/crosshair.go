@@ -2,6 +2,7 @@ package geometry
 
 import "github.com/go-gl/gl/v3.3-core/gl"
 
+// Draws crosshair on the screen
 func DrawCrosshair() {
 	crosshair := []float32{
 		-0.02, 0,

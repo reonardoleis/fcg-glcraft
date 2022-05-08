@@ -206,6 +206,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	//fmt.Println(math2.DeltaTime)
 	newPosition := p.Position
 
+	// handle jumping
 	if !p._isJumping {
 		if math2.GravityAccel >= deltaTime {
 			for i := deltaTime; i < math2.GravityAccel*deltaTime; i += deltaTime {
@@ -261,7 +262,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		}
 	}
 
-	//wneg := w.Mul(-1)
+	// w,a,s,d movement handler, checking the collision of the "future position"
 	if p.ControlHandler.IsDown(int(glfw.KeyW)) {
 		if p.WalkingSpeed >= deltaTime {
 			for i := deltaTime; i < p.WalkingSpeed*deltaTime; i += deltaTime {
@@ -471,6 +472,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 	p.Position = newPosition
 
+	// handles block breaking
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonLeft)) && !p._mouseLeftDownLastUpdate && p.HitAt != nil {
 		p._mouseLeftDownLastUpdate = true
 		world.RemoveBlockFrom(p.HitAt)
@@ -486,6 +488,8 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		p._mouseLeftDownLastUpdate = false
 
 	}
+
+	// handles block placement
 	if p.ControlHandler.IsDown(int(glfw.MouseButtonRight)) && p.ClosestEmptySpace != nil && !p._mouseRightDownLastUpdate {
 		world.AddBlockAt(p.ClosestEmptySpace.Vec3(), false, p.SelectedBlock)
 		p.ClosestEmptySpace = nil
@@ -495,6 +499,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		p._mouseRightDownLastUpdate = false
 	}
 
+	// handles block selection
 	if p.ControlHandler.IsDown(int(glfw.Key1)) {
 		p.SelectedBlock = block.GetBlockTypes()[0]
 	}
@@ -520,43 +525,23 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 		p.SelectedBlock = block.GetBlockTypes()[7]
 	}
 
+	// handles running
 	if p.ControlHandler.IsToggled(int(glfw.KeyLeftShift)) {
 		p.WalkingSpeed = p.defaultSpeed * p.RunningMultiplier
 	} else {
 		p.WalkingSpeed = p.defaultSpeed
 	}
 
-	if p.ControlHandler.IsDown(int(glfw.Key1)) {
-		color = mgl32.Vec3{1.0, 0.0, 0.0}
-	}
-
-	if p.ControlHandler.IsDown(int(glfw.Key2)) {
-		color = mgl32.Vec3{1.0, 1.0, 0.0}
-	}
-
-	if p.ControlHandler.IsDown(int(glfw.Key3)) {
-		color = mgl32.Vec3{0.0, 1.0, 0.0}
-	}
-
-	if p.ControlHandler.IsDown(int(glfw.Key4)) {
-		color = mgl32.Vec3{0.0, 1.0, 1.0}
-	}
-
-	if p.ControlHandler.IsDown(int(glfw.Key4)) {
-		color = mgl32.Vec3{0.0, 0.0, 1.0}
-	}
-
-	if p.ControlHandler.IsDown(int(glfw.Key4)) {
-		color = mgl32.Vec3{1.0, 0.0, 1.0}
-	}
-
+	// handle world limits (if on a limited world)
 	p.HandleWorldLimits(world)
 
+	// updates camera position to follow the player and updates it
 	p.Camera.Follow(p.Position.Add(mgl32.Vec4{0.0, float32(configs.PlayerHeight) / 2, 0.0, 0.0}))
 	p.Camera.Update()
 
 	_, u = p.Camera.GetWU()
 
+	// handle arm drawing
 	armPos := p.Position.Vec3().Add(p.Camera.ViewVector.Vec3().Mul(0.5 + p.ArmAnimationOffset)).Add(u.Vec3().Mul((1)))
 
 	armMatrix := math2.Matrix_Identity()
@@ -575,6 +560,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 	p.Arm.Draw(&armMatrix, 2)
 	gl.BindVertexArray(0)
 
+	// handle arm animation
 	if p.IsAnimatingArm {
 
 		if p.ArmAnimationOffset >= 1 {
@@ -595,6 +581,7 @@ func (p *Player) Update(world *world.World, chunk *chunk.Chunk) {
 
 }
 
+// Updates player bounding box
 func (p *Player) UpdateBoundingBox(newPosition mgl32.Vec4) collisions.CubeBoundingBox {
 	//r := 0.3
 	Ax := newPosition.X() + 0.3

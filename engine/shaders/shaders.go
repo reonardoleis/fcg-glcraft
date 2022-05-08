@@ -16,6 +16,7 @@ var (
 	VertexShader           string
 )
 
+// Loads a fragment shader
 func LoadFragmentShader(name string) (string, error) {
 	fragmentShaderFile := fmt.Sprintf(fmt.Sprintf("./%v_shader_fragment.glsl", name))
 
@@ -28,6 +29,7 @@ func LoadFragmentShader(name string) (string, error) {
 	return string(fragmentShader) + "\x00", nil
 }
 
+// Loads a vertex shader
 func LoadVertexShader(name string) (string, error) {
 	vertexShaderFile := fmt.Sprintf(fmt.Sprintf("./%v_shader_vertex.glsl", name))
 
@@ -40,6 +42,7 @@ func LoadVertexShader(name string) (string, error) {
 	return string(vertexShader) + "\x00", nil
 }
 
+// compile standard shaders
 func InitStandardShaderPrograms(vertex, frag string) (uint32, error) {
 	vertexShaderSource, err := LoadVertexShader(vertex)
 	if err != nil {
@@ -86,6 +89,7 @@ func InitStandardShaderPrograms(vertex, frag string) (uint32, error) {
 	return program, nil
 }
 
+// compile shader
 func InitShaderProgram(name string) (uint32, error) {
 	vertexShaderSource, err := LoadVertexShader(name)
 	if err != nil {
@@ -132,6 +136,7 @@ func InitShaderProgram(name string) (uint32, error) {
 	return program, nil
 }
 
+// compile alternative shader program
 func InitShaderProgram2(name string) (uint32, error) {
 	vertexShaderSource, err := LoadVertexShader(name)
 	if err != nil {
@@ -178,6 +183,7 @@ func InitShaderProgram2(name string) (uint32, error) {
 	return program, nil
 }
 
+// compiles the shader with gl calls
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 

@@ -217,6 +217,7 @@ func (b Block) GetFutureVertices() [8]mgl32.Vec3 {
 	return vector
 }
 
+// Loads a texture
 func newTexture(file string) uint32 {
 	textureFile := fmt.Sprintf("./%v", file)
 	imgFile, err := os.Open(textureFile)
@@ -280,6 +281,8 @@ func generateFaces(faces []mgl32.Vec4) []Face {
 	return facesArr
 }
 
+// Main block drawing method. Handles everything such as getting drawable faces, loading textures
+// and drawing on screen.
 func (b Block) Draw2() {
 	//
 	blockTextures := getBlockTexture(b.BlockType)

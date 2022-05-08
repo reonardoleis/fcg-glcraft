@@ -7,6 +7,7 @@ import (
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 )
 
+// Stores geometric information
 type GeometryInformation struct {
 	FirstIndex    unsafe.Pointer
 	NumIndices    int

@@ -14,12 +14,14 @@ func NewBezierCurve() BezierCurve {
 	}
 }
 
+// Generate 4 random control points
 func (bc *BezierCurve) GenerateRandomPoints() {
 	for i := 0; i < 4; i++ {
 		bc.ControlPoints[i] = mgl32.Vec3{float32(RandInt(0, 3)), 0, float32(RandInt(0, 3))}
 	}
 }
 
+// Compute the bezier curve at T
 func (bc BezierCurve) T(t float32) mgl32.Vec3 {
 	// T in [0, 3]
 	cp1 := bc.ControlPoints[0]

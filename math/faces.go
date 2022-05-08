@@ -2,6 +2,8 @@ package math2
 
 import "github.com/go-gl/mathgl/mgl32"
 
+// Each method gets the given position given a block
+
 func North(position mgl32.Vec4, size float32) mgl32.Vec4 {
 	return mgl32.Vec4{position.X() + size/2, position.Y(), position.Z(), position.W()}
 }

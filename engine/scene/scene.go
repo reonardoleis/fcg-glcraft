@@ -70,6 +70,7 @@ func NewScene(world *world.World, mainCamera *camera.Camera, player *player.Play
 	}
 }
 
+// Updates the scene each frame, will handle world and player updates
 func (s *Scene) Update(window glfw.Window) {
 
 	cx, cz := s.Player.GetChunkOffset().Elem()
@@ -90,6 +91,7 @@ func (s *Scene) Update(window glfw.Window) {
 
 	gl.UseProgram(shaders.ShaderProgramDefault)
 
+	// verify if player changed chunk
 	if currentChunk.ID != s.Player.LastChunk {
 		s.World.FutureChunks = s.World.Chunks
 		s.World.HandleChunkChange(int(currentChunk.Offset[0]), int(currentChunk.Offset[1]))
@@ -100,6 +102,7 @@ func (s *Scene) Update(window glfw.Window) {
 	realPlayerX, realPlayerY, realPlayerZ := s.Player.GetRealPosition()
 	//playerY := float64(s.Player.Position.Y())
 
+	// handle wireframe mode
 	if s.ControlHandler.IsToggled(int(glfw.KeyZ)) {
 		block.BlockEdgesOnly = true
 	} else {
@@ -108,6 +111,8 @@ func (s *Scene) Update(window glfw.Window) {
 
 	backOfPlayer, frontOfPlayer := s.Player.GetFrontAndBackDirections()
 	gl.BindVertexArray(1)
+
+	// draw all .obj objects
 	for _, obj := range s.Objs {
 
 		if obj.Animating {

@@ -2,6 +2,7 @@ package configs
 
 type TresholdTuple = [2]float64
 
+// Configuration
 const (
 	BlockSize          int     = 1
 	TickRate           float64 = 0.5

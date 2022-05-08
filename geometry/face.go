@@ -49,6 +49,7 @@ var (
 	}
 )
 
+// Draws a face on origin, block type parameter is unused at this moment
 func BuildFace(blockType int) {
 	// Primeiro, definimos os atributos de cada vértice.
 

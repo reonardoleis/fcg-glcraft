@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
+// Mouse button callback
 func MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 	if button == glfw.MouseButtonLeft && action == glfw.Press {
 		gLastCursorPosX, gLastCursorPosY = window.GetCursorPos()
@@ -22,6 +23,7 @@ func MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action gl
 	}
 }
 
+// Cursor pos callback as seen on classes
 func CursorPosCallback(window *glfw.Window, x float64, y float64) {
 	gCursorDeltaX = x - gLastCursorPosX
 	gCursorDeltaY = y - gLastCursorPosY

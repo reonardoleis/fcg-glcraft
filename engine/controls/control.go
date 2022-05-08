@@ -2,6 +2,8 @@ package controls
 
 import "github.com/go-gl/glfw/v3.3/glfw"
 
+// This file has input detection wrappers which are used all over the project
+
 const (
 	LMB = iota
 	RMB

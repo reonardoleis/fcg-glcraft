@@ -70,6 +70,7 @@ type Frustum struct {
 	Nbr mgl32.Vec4
 }
 
+// get the camera frustum
 func (c *Camera) GetFrustum() Frustum {
 	vv := c.ViewVector
 	/* float a = cam.nearClipPlane;//get length
@@ -113,6 +114,7 @@ func (c *Camera) GetFrustum() Frustum {
 	}
 }
 
+// Handle mouse movement to camera positions
 func (c *Camera) HandleDeltas() {
 	if c.ControlHandler.MousePositionChanged() {
 		dx, dy := c.ControlHandler.GetMouseDeltas()
@@ -150,6 +152,7 @@ func (c *Camera) Update() {
 	c.Handle()
 }
 
+// Handle camera, basically a camera Update method. Compute all needed matrixes and sends to the GPU
 func (c *Camera) Handle() {
 	viewUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("view\000"))             // Variável da matriz "view" em shader_vertex.glsl
 	projectionUniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("projection\000")) // Variável da matriz "projection" em shader_vertex.glsl

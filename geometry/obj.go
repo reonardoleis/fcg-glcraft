@@ -7,6 +7,7 @@ import (
 	math2 "github.com/reonardoleis/fcg-glcraft/math"
 )
 
+// Build .obj files VAO and VBOs
 func BuildObj(vertices, indices_ []float32) GeometryInformation {
 	// Primeiro, definimos os atributos de cada vértice.
 
@@ -172,6 +173,7 @@ func (gi GeometryInformation) Draw(modelMat_ *mgl32.Mat4, objectId int32) {
 	)
 }
 
+// Draws an arbitrary GeometryInformation data on screen
 func (gi GeometryInformation) DrawAt(modelMat_ *mgl32.Mat4, objectId int32, at mgl32.Vec3) {
 	model_uniform := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("model\000")) // Variável da matriz "model"
 	object_id := gl.GetUniformLocation(shaders.ShaderProgramDefault, gl.Str("object_id\000")) // Variável da matriz "model"

@@ -24,7 +24,8 @@ import (
 	"github.com/reonardoleis/fcg-glcraft/camera"
 	"github.com/reonardoleis/fcg-glcraft/configs"
 	"github.com/reonardoleis/fcg-glcraft/engine/controls"
-	rendererPkg "github.com/reonardoleis/fcg-glcraft/engine/renderer"
+	"github.com/reonardoleis/fcg-glcraft/engine/entrypoint"
+
 	"github.com/reonardoleis/fcg-glcraft/engine/scene"
 	"github.com/reonardoleis/fcg-glcraft/engine/shaders"
 	"github.com/reonardoleis/fcg-glcraft/engine/window"
@@ -50,8 +51,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	renderer := rendererPkg.NewRenderer()
-	err = renderer.Init()
+	openGLEntrypoint := entrypoint.NewEntryPoint()
+	err = openGLEntrypoint.Init()
 	if err != nil {
 		log.Fatal(err)
 	}

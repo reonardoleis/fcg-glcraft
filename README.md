@@ -10,11 +10,11 @@ FCG-GLCraft is a Minecraft clone developed as a project for the "Computer Graphi
 
 - **Chunk-Based World Generation:** The world is generated in chunks, providing an efficient way to handle large virtual environments.
 
-- **Block Placing and Removing:** Interact with the environment by placing and removing blocks, offering creative freedom.
+- **Block Placing and Removing:** Interact with the environment by placing and removing blocks.
 
-- **Basic Movement:** Navigate through the virtual world with basic movement controls for a seamless user experience.
+- **Basic Movement:** Navigate through the virtual world with basic movement controls ("WASD" controls).
 
-- **Water Physics:** Experience realistic water physics within the game environment.
+- **Water Physics:** Experience minecraft-like water physics within the game environment.
 
 ## Screenshots
 

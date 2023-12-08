@@ -1,5 +1,3 @@
-# FCG-GLCraft
-
 ![FCG-GLCraft Header Image](https://user-images.githubusercontent.com/33813822/161403887-c3c6ace3-a617-4235-aa73-a67d5b83daac.png)
 
 ## Overview

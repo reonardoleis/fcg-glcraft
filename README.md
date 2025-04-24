@@ -25,5 +25,5 @@ To get started with FCG-GLCraft, follow these steps:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-username/fcg-glcraft.git
+   git clone https://github.com/reonardoleis/fcg-glcraft.git
 
